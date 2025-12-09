@@ -36,3 +36,42 @@
     transform: rotate(360deg);
   }
 }
+
+
+/* App.css */
+
+/* Keep existing styles for login/register */
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: left;
+  min-height: 100vh;
+}
+
+.auth-inner {
+  width: 450px;
+  margin: auto;
+  background: #ffffff;
+  box-shadow: 0px 14px 80px rgba(34, 35, 58, 0.2);
+  padding: 40px 55px 45px 55px;
+  border-radius: 15px;
+  transition: all 0.3s;
+}
+
+/* NEW: Remove wrapper constraints for dashboard pages */
+.full-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.App {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
