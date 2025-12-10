@@ -9,12 +9,27 @@
 /* Previous CSS remains... then add: */
 
 /* AI Tools Section */
+
+
+.ai-btn {
+  background-color: #0077ff; /* Set your preferred color */
+  color: black !important;
+  border: none;
+}
+
+.ai-btn:hover {
+  background-color: #005ec7;
+  color: white !important;
+}
+
+
+
 .ai-tools-section {
   margin-bottom: 3rem;
 }
 
 .ai-tools-section h4 {
-  color: #2c3e50;
+  color: #1c1c1d;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
@@ -22,7 +37,7 @@
 }
 
 .ai-tools-section h4 i {
-  color: #8b5cf6;
+  color: #070707;
 }
 
 .ai-tools-grid {
@@ -51,7 +66,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #080808 0%, #131114 100%);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
@@ -59,7 +74,7 @@
 .ai-tool-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  border-color: #667eea;
+  border-color: #050505;
 }
 
 .ai-tool-card:hover::before {
@@ -108,16 +123,28 @@
   color: white;
 }
 
+.ai-btn {
+  background-color: #080808; 
+  color: rgb(233, 223, 223) !important;
+  border: none;
+}
+
+.ai-btn:hover {
+  background-color: #312d2d;
+  color: rgb(233, 221, 221) !important;
+}
+
+
 /* AI Tool Card Content */
 .ai-tool-card h5 {
-  color: #2c3e50;
+  color: #151618;
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
 
 .ai-tool-card p {
-  color: #7f8c8d;
+  color: #0d0d0e;
   font-size: 0.9rem;
   line-height: 1.5;
   margin-bottom: 1rem;
@@ -127,7 +154,7 @@
 .tool-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #232425 0%, #080808 100%);
   color: white;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -138,13 +165,13 @@
 
 /* AI Card in Overview */
 .overview-card.ai-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #242425 0%, #282629 100%);
   color: white;
   border: none;
 }
 
 .overview-card.ai-card .card-icon {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
   color: white;
 }
 
@@ -190,7 +217,7 @@
 
 .navbar-brand h2 {
   margin: 0;
-  color: #2c3e50;
+  color: #000000;
   font-size: 1.5rem;
 }
 
@@ -201,7 +228,7 @@
 }
 
 .user-name {
-  color: #555;
+  color: #141414;
   font-weight: 500;
 }
 
@@ -229,7 +256,7 @@
 }
 
 .dashboard-header h3 {
-  color: #2c3e50;
+  color: #111213;
   margin: 0;
 }
 
@@ -263,13 +290,13 @@
 
 .card-icon {
   font-size: 2.5rem;
-  color: #3498db;
+  color: #080808;
   width: 60px;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e3f2fd;
+  background: #232324;
   border-radius: 12px;
 }
 
@@ -281,12 +308,12 @@
 .card-content h4 {
   font-size: 2rem;
   font-weight: bold;
-  color: #2c3e50;
+  color: #121213;
   margin: 0;
 }
 
 .card-content p {
-  color: #7f8c8d;
+  color: #131414;
   margin: 0;
   font-size: 0.9rem;
 }
@@ -297,7 +324,7 @@
 }
 
 .classes-section h4 {
-  color: #2c3e50;
+  color: #1c1c1d;
   margin-bottom: 1.5rem;
 }
 
@@ -311,7 +338,7 @@
 }
 
 .no-classes p {
-  color: #7f8c8d;
+  color: #121313;
   margin: 1rem 0 2rem;
 }
 
@@ -343,7 +370,7 @@
   width: 100%;
   height: 150px;
   overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #171718 0%, #1c1b1d 100%);
 }
 
 .class-thumbnail img {
@@ -370,13 +397,13 @@
 }
 
 .class-info h5 {
-  color: #2c3e50;
+  color: #1a1b1b;
   margin-bottom: 0.5rem;
   font-size: 1.2rem;
 }
 
 .class-description {
-  color: #7f8c8d;
+  color: #1f2020;
   font-size: 0.9rem;
   margin-bottom: 1rem;
   overflow: hidden;
@@ -391,7 +418,7 @@
   display: flex;
   gap: 1rem;
   font-size: 0.85rem;
-  color: #95a5a6;
+  color: #0c0c0c;
 }
 
 .class-meta span {
@@ -417,7 +444,7 @@
 }
 
 .quick-actions h4 {
-  color: #2c3e50;
+  color: #18191a;
   margin-bottom: 1.5rem;
 }
 
@@ -441,18 +468,18 @@
 }
 
 .action-btn:hover {
-  border-color: #3498db;
+  border-color: #080808;
   background: #f8f9fa;
   transform: translateY(-2px);
 }
 
 .action-btn i {
   font-size: 2rem;
-  color: #3498db;
+  color: #020202;
 }
 
 .action-btn span {
-  color: #2c3e50;
+  color: #0e0f0f;
   font-weight: 500;
 }
 
@@ -512,7 +539,7 @@
 
 .navbar-brand h2 {
   margin: 0;
-  color: #2c3e50;
+  color: #18191a;
   font-size: 1.5rem;
 }
 
@@ -523,7 +550,7 @@
 }
 
 .user-name {
-  color: #555;
+  color: #0a0a0a;
   font-weight: 500;
 }
 
@@ -556,7 +583,7 @@
 }
 
 .dashboard-header h3 {
-  color: #2c3e50;
+  color: #0d0d0e;
   margin: 0;
 }
 
@@ -590,7 +617,7 @@
 
 .card-icon {
   font-size: 2.5rem;
-  color: #3498db;
+  color: #0d0d0e;
   width: 60px;
   height: 60px;
   display: flex;
@@ -608,12 +635,12 @@
 .card-content h4 {
   font-size: 2rem;
   font-weight: bold;
-  color: #2c3e50;
+  color: #080808;
   margin: 0;
 }
 
 .card-content p {
-  color: #7f8c8d;
+  color: #030303;
   margin: 0;
   font-size: 0.9rem;
 }
@@ -624,7 +651,7 @@
 }
 
 .classes-section h4 {
-  color: #2c3e50;
+  color: #0e0f0f;
   margin-bottom: 1.5rem;
 }
 
@@ -638,7 +665,7 @@
 }
 
 .no-classes p {
-  color: #7f8c8d;
+  color: #080808;
   margin: 1rem 0 2rem;
 }
 
@@ -670,7 +697,7 @@
   width: 100%;
   height: 150px;
   overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #161616 0%, #0a0a0a 100%);
 }
 
 .class-thumbnail img {
@@ -697,13 +724,13 @@
 }
 
 .class-info h5 {
-  color: #2c3e50;
+  color: #080808;
   margin-bottom: 0.5rem;
   font-size: 1.2rem;
 }
 
 .class-description {
-  color: #7f8c8d;
+  color: #0a0a0a;
   font-size: 0.9rem;
   margin-bottom: 1rem;
   overflow: hidden;
@@ -718,7 +745,7 @@
   display: flex;
   gap: 1rem;
   font-size: 0.85rem;
-  color: #95a5a6;
+  color: #1a1b1b;
 }
 
 .class-meta span {
@@ -744,7 +771,7 @@
 }
 
 .quick-actions h4 {
-  color: #2c3e50;
+  color: #111213;
   margin-bottom: 1.5rem;
 }
 
@@ -768,18 +795,18 @@
 }
 
 .action-btn:hover {
-  border-color: #3498db;
+  border-color: #111111;
   background: #f8f9fa;
   transform: translateY(-2px);
 }
 
 .action-btn i {
   font-size: 2rem;
-  color: #3498db;
+  color: #1c1d1f;
 }
 
 .action-btn span {
-  color: #2c3e50;
+  color: #0f0f0f;
   font-weight: 500;
 }
 
@@ -827,4 +854,425 @@
   padding: 0 !important;
   overflow-y: auto;
   background-color: #f5f7fa;
+}
+
+
+
+/* Here are all css about the profile ... */
+
+/* Profile Dropdown Container */
+.profile-dropdown-container {
+  position: relative;
+}
+
+/* Profile Button */
+.profile-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50px;
+  transition: all 0.2s;
+}
+
+.profile-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Profile Avatar - Perfect Circle */
+.profile-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #15e731;
+  box-shadow: 0 2px 8px rgba(18, 223, 63, 0.2);
+}
+
+/* Profile Avatar Placeholder - Shows Initials */
+.profile-avatar-placeholder {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #141414 0%, #11e21b 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid #0e0e0f;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  text-transform: uppercase;
+}
+
+
+
+/* Custom button color */
+.btn-custom {
+  background-color: #28a745; /* Green background */
+  color: white;               /* Text color */
+  border: none;               /* Optional: remove border */
+}
+
+.btn-custom:hover {
+  background-color: #218838; /* Darker green on hover */
+}
+
+
+
+
+/* Dropdown Menu */
+.profile-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  min-width: 300px;
+  z-index: 1000;
+  animation: dropdownSlide 0.25s ease;
+  overflow: hidden;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dropdown Header */
+.dropdown-header {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #2fd62f 0%, #322d36 100%);
+  color: white;
+}
+
+.edit-profile-modal .modal-header {
+  background: linear-gradient(135deg, #2fd62f 0%, #1f1e20 100%); /* example green gradient */
+  color: white; /* text color */
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+
+.dropdown-user-info {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Dropdown Avatar - Larger Circle */
+.dropdown-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-avatar-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(56, 202, 104, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.dropdown-user-info h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.dropdown-user-info p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Role Badge */
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dropdown Divider */
+.dropdown-divider {
+  height: 1px;
+  background: #e9ecef;
+  margin: 0;
+}
+
+/* Dropdown Items */
+.dropdown-item {
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: #2c3e50;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.dropdown-item:hover {
+  background: #f8f9fa;
+  color: #55da3a;
+}
+
+.dropdown-item.danger {
+  color: #e74c3c;
+}
+
+.dropdown-item.danger:hover {
+  background: #fee;
+  color: #c0392b;
+}
+
+.dropdown-item i {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+/* Edit Profile Modal */
+.edit-profile-modal {
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Profile Photo Section */
+.profile-photo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8faf8 0%, #e9ecef 100%);
+  border-radius: 16px;
+  text-align: center;
+}
+
+/* Current Photo Container */
+.current-photo {
+  position: relative;
+  display: inline-block;
+}
+
+.current-photo img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Photo Placeholder */
+.photo-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2af134 0%, #4a4450 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 2.5rem;
+  border: 4px solid white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  text-transform: uppercase;
+}
+
+/* Photo Upload Controls */
+.photo-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.upload-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: linear-gradient(135deg, #56f042 0%, #48414e 100%);
+  color: white;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.upload-label:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.upload-label:active {
+  transform: translateY(0);
+}
+
+.upload-label i {
+  font-size: 1.1rem;
+}
+
+/* Upload Helper Text */
+.text-muted {
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Form Styling in Modal */
+.edit-profile-modal .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.edit-profile-modal .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.edit-profile-modal .form-control {
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.2s;
+  background: #f8f9fa;
+}
+
+.edit-profile-modal .form-control:focus {
+  outline: none;
+  border-color: #6aea66;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(110, 238, 85, 0.1);
+}
+
+.edit-profile-modal .form-control:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.edit-profile-modal .text-muted {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Modal Body Spacing */
+.edit-profile-modal .modal-body {
+  padding: 2rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .profile-dropdown-menu {
+    right: -10px;
+    min-width: 280px;
+  }
+  
+  .navbar-user .user-name {
+    display: none;
+  }
+  
+  .profile-avatar,
+  .profile-avatar-placeholder {
+    width: 38px;
+    height: 38px;
+    font-size: 0.9rem;
+  }
+  
+  .current-photo img,
+  .photo-placeholder {
+    width: 100px;
+    height: 100px;
+    font-size: 2rem;
+  }
+  
+  .edit-profile-modal {
+    max-width: 95%;
+  }
+}
+
+/* Loading Spinner for Photo Upload */
+.upload-label .spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
+/* Smooth transitions */
+.profile-avatar,
+.profile-avatar-placeholder,
+.dropdown-avatar,
+.dropdown-avatar-placeholder,
+.current-photo img,
+.photo-placeholder {
+  transition: transform 0.2s ease;
+}
+
+.profile-btn:hover .profile-avatar,
+.profile-btn:hover .profile-avatar-placeholder {
+  transform: scale(1.05);
 }

@@ -1,8 +1,9 @@
 // components/teacher_dashboard.js
-import React, { useEffect, useState } from "react";
-import { auth, db } from "./firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import React, { useEffect, useState, useRef } from "react";
+import { auth, db, storage } from "./firebase";
+import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
 import CreateClassModal from "./CreateClassModal";
 import AIToolsModal from "./AIToolsModal";
@@ -19,11 +20,33 @@ function TeacherDashboard() {
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
   const [showAIToolsModal, setShowAIToolsModal] = useState(false);
   const [selectedAITool, setSelectedAITool] = useState(null);
+  
+  // Profile dropdown state
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: ""
+  });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  
+  const dropdownRef = useRef(null);
 
   // Fetch user details and classes when component mounts
   useEffect(() => {
     fetchUserData();
     fetchTeacherClasses();
+    
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Fetch current user's profile data from Firestore
@@ -36,6 +59,11 @@ function TeacherDashboard() {
         if (docSnap.exists()) {
           const userData = docSnap.data();
           setUserDetails(userData);
+          setEditForm({
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+            email: userData.email || ""
+          });
           
           // Check if user is actually a teacher
           if (userData.role !== "teacher") {
@@ -88,6 +116,71 @@ function TeacherDashboard() {
     }
   };
 
+  // Handle profile photo upload
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const user = auth.currentUser;
+      const photoRef = ref(storage, `profile-photos/${user.uid}`);
+      
+      await uploadBytes(photoRef, file);
+      const photoURL = await getDownloadURL(photoRef);
+      
+      // Update Firestore
+      await updateDoc(doc(db, "Users", user.uid), {
+        photo: photoURL
+      });
+      
+      setUserDetails({ ...userDetails, photo: photoURL });
+      toast.success("Profile photo updated!");
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      toast.error("Failed to upload photo");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Handle profile update
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const user = auth.currentUser;
+      await updateDoc(doc(db, "Users", user.uid), {
+        firstName: editForm.firstName,
+        lastName: editForm.lastName
+      });
+      
+      setUserDetails({
+        ...userDetails,
+        firstName: editForm.firstName,
+        lastName: editForm.lastName
+      });
+      
+      setShowEditProfile(false);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+    }
+  };
+
   // Handle user logout
   const handleLogout = async () => {
     try {
@@ -134,9 +227,86 @@ function TeacherDashboard() {
               <span className="user-name">
                 Welcome, {userDetails.firstName} {userDetails.lastName}
               </span>
-              <button onClick={handleLogout} className="btn btn-outline-danger btn-sm">
-                <i className="bi bi-box-arrow-right"></i> Logout
-              </button>
+              
+              {/* Profile Dropdown */}
+              <div className="profile-dropdown-container" ref={dropdownRef}>
+                <button 
+                  className="profile-btn"
+                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                >
+                  {userDetails.photo ? (
+                    <img 
+                      src={userDetails.photo} 
+                      alt="Profile" 
+                      className="profile-avatar"
+                    />
+                  ) : (
+                    <div className="profile-avatar-placeholder">
+                      {userDetails.firstName?.charAt(0)}{userDetails.lastName?.charAt(0)}
+                    </div>
+                  )}
+                  <i className="bi bi-chevron-down ms-1"></i>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showProfileDropdown && (
+                  <div className="profile-dropdown-menu">
+                    <div className="dropdown-header">
+                      <div className="dropdown-user-info">
+                        {userDetails.photo ? (
+                          <img 
+                            src={userDetails.photo} 
+                            alt="Profile" 
+                            className="dropdown-avatar"
+                          />
+                        ) : (
+                          <div className="dropdown-avatar-placeholder">
+                            {userDetails.firstName?.charAt(0)}{userDetails.lastName?.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <h4>{userDetails.firstName} {userDetails.lastName}</h4>
+                          <p>{userDetails.email}</p>
+                          <span className="role-badge">Teacher</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="dropdown-divider"></div>
+
+                    <button 
+                      className="dropdown-item"
+                      onClick={() => {
+                        setShowEditProfile(true);
+                        setShowProfileDropdown(false);
+                      }}
+                    >
+                      <i className="bi bi-person-circle"></i>
+                      Edit Profile
+                    </button>
+
+                    <button className="dropdown-item">
+                      <i className="bi bi-gear"></i>
+                      Settings
+                    </button>
+
+                    <button className="dropdown-item">
+                      <i className="bi bi-question-circle"></i>
+                      Help & Support
+                    </button>
+
+                    <div className="dropdown-divider"></div>
+
+                    <button 
+                      className="dropdown-item danger"
+                      onClick={handleLogout}
+                    >
+                      <i className="bi bi-box-arrow-right"></i>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -149,23 +319,23 @@ function TeacherDashboard() {
           <h3>Teacher Dashboard</h3>
           <div className="header-actions">
             <button 
-              className="btn btn-outline-primary me-2"
+             className="btn ai-btn me-2"
               onClick={() => handleOpenAITool('chatbot')}
             >
               <i className="bi bi-robot"></i> AI Assistant
-            </button>
+              </button>
+
             <button 
-              className="btn btn-primary"
+              className="btn ai-btn me-2"
               onClick={() => setShowCreateClassModal(true)}
             >
-              <i className="bi bi-plus-circle"></i> Create New Class
+              <i className="bi bi-robot"></i> Create New Class
             </button>
           </div>
         </div>
 
         {/* Overview Cards */}
         <div className="overview-cards">
-          {/* Total Classes Card */}
           <div className="overview-card">
             <div className="card-icon">
               <i className="bi bi-book"></i>
@@ -176,7 +346,6 @@ function TeacherDashboard() {
             </div>
           </div>
 
-          {/* Pending Grading Card */}
           <div className="overview-card pending">
             <div className="card-icon">
               <i className="bi bi-pencil-square"></i>
@@ -187,7 +356,6 @@ function TeacherDashboard() {
             </div>
           </div>
 
-          {/* Total Students Card */}
           <div className="overview-card">
             <div className="card-icon">
               <i className="bi bi-people"></i>
@@ -200,7 +368,6 @@ function TeacherDashboard() {
             </div>
           </div>
 
-          {/* AI Tools Used Card */}
           <div className="overview-card ai-card">
             <div className="card-icon">
               <i className="bi bi-stars"></i>
@@ -212,13 +379,12 @@ function TeacherDashboard() {
           </div>
         </div>
 
-        {/* AI Tools Section - NEW */}
+        {/* AI Tools Section */}
         <div className="ai-tools-section">
           <h4>
             <i className="bi bi-magic"></i> AI-Powered Tools
           </h4>
           <div className="ai-tools-grid">
-            {/* AI Auto-Grading */}
             <div 
               className="ai-tool-card"
               onClick={() => handleOpenAITool('grading')}
@@ -231,7 +397,6 @@ function TeacherDashboard() {
               <span className="tool-badge">Advanced</span>
             </div>
 
-            {/* Course AI Tutor */}
             <div 
               className="ai-tool-card"
               onClick={() => handleOpenAITool('tutor')}
@@ -244,7 +409,6 @@ function TeacherDashboard() {
               <span className="tool-badge">Popular</span>
             </div>
 
-            {/* Lecture Explainer */}
             <div 
               className="ai-tool-card"
               onClick={() => handleOpenAITool('explainer')}
@@ -257,7 +421,6 @@ function TeacherDashboard() {
               <span className="tool-badge">New</span>
             </div>
 
-            {/* Pass-Paper Analyzer */}
             <div 
               className="ai-tool-card"
               onClick={() => handleOpenAITool('analyzer')}
@@ -270,7 +433,6 @@ function TeacherDashboard() {
               <span className="tool-badge">Insight</span>
             </div>
 
-            {/* Meeting Summarizer */}
             <div 
               className="ai-tool-card"
               onClick={() => handleOpenAITool('summarizer')}
@@ -283,7 +445,6 @@ function TeacherDashboard() {
               <span className="tool-badge">Voice AI</span>
             </div>
 
-            {/* AI Chatbot */}
             <div 
               className="ai-tool-card"
               onClick={() => handleOpenAITool('chatbot')}
@@ -317,7 +478,6 @@ function TeacherDashboard() {
             <div className="classes-grid">
               {classes.map((classItem) => (
                 <div key={classItem.id} className="class-card">
-                  {/* Class Thumbnail */}
                   <div className="class-thumbnail">
                     {classItem.thumbnail ? (
                       <img src={classItem.thumbnail} alt={classItem.name} />
@@ -328,7 +488,6 @@ function TeacherDashboard() {
                     )}
                   </div>
                   
-                  {/* Class Info */}
                   <div className="class-info">
                     <h5>{classItem.name}</h5>
                     <p className="class-description">{classItem.description}</p>
@@ -344,7 +503,6 @@ function TeacherDashboard() {
                     </p>
                   </div>
                   
-                  {/* Class Actions */}
                   <div className="class-actions">
                     <button className="btn btn-sm btn-primary">
                       <i className="bi bi-box-arrow-in-right"></i> Enter Class
@@ -390,6 +548,108 @@ function TeacherDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditProfile && (
+        <div className="modal-overlay" onClick={() => setShowEditProfile(false)}>
+          <div className="edit-profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                <i className="bi bi-person-circle"></i> Edit Profile
+              </h3>
+              <button className="close-btn" onClick={() => setShowEditProfile(false)}>
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProfile}>
+              <div className="modal-body">
+                {/* Profile Photo Section */}
+                <div className="profile-photo-section">
+                  <div className="current-photo">
+                    {userDetails.photo ? (
+                      <img src={userDetails.photo} alt="Profile" />
+                    ) : (
+                      <div className="photo-placeholder">
+                        {userDetails.firstName?.charAt(0)}{userDetails.lastName?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="photo-upload">
+                    <label htmlFor="photo-upload" className="upload-label">
+                      {uploadingPhoto ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-camera"></i> Change Photo
+                        </>
+                      )}
+                    </label>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      disabled={uploadingPhoto}
+                      style={{ display: "none" }}
+                    />
+                    <small className="text-muted">Max size: 5MB</small>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>First Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editForm.firstName}
+                    onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editForm.lastName}
+                    onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Email (Read-only)</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={editForm.email}
+                    disabled
+                  />
+                  <small className="text-muted">Email cannot be changed</small>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditProfile(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-custom">
+                <i className="bi bi-check-circle"></i> Save Changes
+             </button>
+
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {showCreateClassModal && (
