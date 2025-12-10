@@ -4,7 +4,9 @@ import { auth, db } from "./firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { toast } from "react-toastify";
-import "./teacher_dashboard.css"; // We'll create this CSS file
+import CreateClassModal from "./CreateClassModal";
+import AIToolsModal from "./AIToolsModal";
+import "./teacher_dashboard.css";
 
 function TeacherDashboard() {
   // State variables for user data and classes
@@ -12,6 +14,11 @@ function TeacherDashboard() {
   const [classes, setClasses] = useState([]);
   const [pendingGrading, setPendingGrading] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [showCreateClassModal, setShowCreateClassModal] = useState(false);
+  const [showAIToolsModal, setShowAIToolsModal] = useState(false);
+  const [selectedAITool, setSelectedAITool] = useState(null);
 
   // Fetch user details and classes when component mounts
   useEffect(() => {
@@ -23,7 +30,6 @@ function TeacherDashboard() {
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Get user document from Firestore
         const docRef = doc(db, "Users", user.uid);
         const docSnap = await getDoc(docRef);
         
@@ -42,7 +48,6 @@ function TeacherDashboard() {
           console.log("User document not found");
         }
       } else {
-        // If not logged in, redirect to login page
         console.log("User is not logged in");
         window.location.href = "/login";
       }
@@ -55,7 +60,6 @@ function TeacherDashboard() {
     if (!user) return;
 
     try {
-      // Query Firestore for classes where teacherId matches current user
       const classesQuery = query(
         collection(db, "classes"),
         where("teacherId", "==", user.uid)
@@ -64,7 +68,6 @@ function TeacherDashboard() {
       const querySnapshot = await getDocs(classesQuery);
       const classesData = [];
       
-      // Loop through each class document
       querySnapshot.forEach((doc) => {
         classesData.push({
           id: doc.id,
@@ -73,9 +76,6 @@ function TeacherDashboard() {
       });
       
       setClasses(classesData);
-      
-      // TODO: Calculate pending grading count
-      // This will be implemented when we add the grading feature
       setPendingGrading(0);
       
     } catch (error) {
@@ -104,6 +104,12 @@ function TeacherDashboard() {
     }
   };
 
+  // Handle opening AI tool
+  const handleOpenAITool = (toolName) => {
+    setSelectedAITool(toolName);
+    setShowAIToolsModal(true);
+  };
+
   // Show loading spinner while fetching data
   if (loading) {
     return (
@@ -120,7 +126,7 @@ function TeacherDashboard() {
       {/* Top Navigation Bar */}
       <nav className="dashboard-navbar">
         <div className="navbar-brand">
-          <h2>Campus Hub - Teacher</h2>
+          <h2>🎓 Campus Hub - Teacher</h2>
         </div>
         <div className="navbar-user">
           {userDetails && (
@@ -129,7 +135,7 @@ function TeacherDashboard() {
                 Welcome, {userDetails.firstName} {userDetails.lastName}
               </span>
               <button onClick={handleLogout} className="btn btn-outline-danger btn-sm">
-                Logout
+                <i className="bi bi-box-arrow-right"></i> Logout
               </button>
             </>
           )}
@@ -141,9 +147,20 @@ function TeacherDashboard() {
         {/* Dashboard Header */}
         <div className="dashboard-header">
           <h3>Teacher Dashboard</h3>
-          <button className="btn btn-primary">
-            + Create New Class
-          </button>
+          <div className="header-actions">
+            <button 
+              className="btn btn-outline-primary me-2"
+              onClick={() => handleOpenAITool('chatbot')}
+            >
+              <i className="bi bi-robot"></i> AI Assistant
+            </button>
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowCreateClassModal(true)}
+            >
+              <i className="bi bi-plus-circle"></i> Create New Class
+            </button>
+          </div>
         </div>
 
         {/* Overview Cards */}
@@ -183,14 +200,100 @@ function TeacherDashboard() {
             </div>
           </div>
 
-          {/* Announcements Card */}
-          <div className="overview-card">
+          {/* AI Tools Used Card */}
+          <div className="overview-card ai-card">
             <div className="card-icon">
-              <i className="bi bi-megaphone"></i>
+              <i className="bi bi-stars"></i>
             </div>
             <div className="card-content">
-              <h4>0</h4>
-              <p>Recent Announcements</p>
+              <h4>AI Powered</h4>
+              <p>Smart Features Active</p>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Tools Section - NEW */}
+        <div className="ai-tools-section">
+          <h4>
+            <i className="bi bi-magic"></i> AI-Powered Tools
+          </h4>
+          <div className="ai-tools-grid">
+            {/* AI Auto-Grading */}
+            <div 
+              className="ai-tool-card"
+              onClick={() => handleOpenAITool('grading')}
+            >
+              <div className="tool-icon grading">
+                <i className="bi bi-clipboard-check"></i>
+              </div>
+              <h5>AI Auto-Grading</h5>
+              <p>Automatic evaluation of assignments with smart marking suggestions</p>
+              <span className="tool-badge">Advanced</span>
+            </div>
+
+            {/* Course AI Tutor */}
+            <div 
+              className="ai-tool-card"
+              onClick={() => handleOpenAITool('tutor')}
+            >
+              <div className="tool-icon tutor">
+                <i className="bi bi-chat-dots"></i>
+              </div>
+              <h5>Course AI Tutor</h5>
+              <p>RAG-based AI assistant trained on your course materials</p>
+              <span className="tool-badge">Popular</span>
+            </div>
+
+            {/* Lecture Explainer */}
+            <div 
+              className="ai-tool-card"
+              onClick={() => handleOpenAITool('explainer')}
+            >
+              <div className="tool-icon explainer">
+                <i className="bi bi-lightbulb"></i>
+              </div>
+              <h5>AI Lecture Explainer</h5>
+              <p>Generate simplified summaries and explanations of lectures</p>
+              <span className="tool-badge">New</span>
+            </div>
+
+            {/* Pass-Paper Analyzer */}
+            <div 
+              className="ai-tool-card"
+              onClick={() => handleOpenAITool('analyzer')}
+            >
+              <div className="tool-icon analyzer">
+                <i className="bi bi-graph-up-arrow"></i>
+              </div>
+              <h5>Pass-Paper Analyzer</h5>
+              <p>Analyze exam patterns and generate study recommendations</p>
+              <span className="tool-badge">Insight</span>
+            </div>
+
+            {/* Meeting Summarizer */}
+            <div 
+              className="ai-tool-card"
+              onClick={() => handleOpenAITool('summarizer')}
+            >
+              <div className="tool-icon summarizer">
+                <i className="bi bi-mic"></i>
+              </div>
+              <h5>Meeting Summarizer</h5>
+              <p>Transcribe and summarize lecture recordings automatically</p>
+              <span className="tool-badge">Voice AI</span>
+            </div>
+
+            {/* AI Chatbot */}
+            <div 
+              className="ai-tool-card"
+              onClick={() => handleOpenAITool('chatbot')}
+            >
+              <div className="tool-icon chatbot">
+                <i className="bi bi-robot"></i>
+              </div>
+              <h5>AI Teaching Assistant</h5>
+              <p>24/7 AI assistant for course queries and help</p>
+              <span className="tool-badge">24/7</span>
             </div>
           </div>
         </div>
@@ -200,14 +303,17 @@ function TeacherDashboard() {
           <h4>My Classes</h4>
           
           {classes.length === 0 ? (
-            // Show message if no classes exist
             <div className="no-classes">
               <i className="bi bi-inbox" style={{ fontSize: "48px", color: "#ccc" }}></i>
               <p>No classes yet. Create your first class to get started!</p>
-              <button className="btn btn-primary">Create Class</button>
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowCreateClassModal(true)}
+              >
+                <i className="bi bi-plus-circle"></i> Create Class
+              </button>
             </div>
           ) : (
-            // Display class cards in a grid
             <div className="classes-grid">
               {classes.map((classItem) => (
                 <div key={classItem.id} className="class-card">
@@ -241,7 +347,7 @@ function TeacherDashboard() {
                   {/* Class Actions */}
                   <div className="class-actions">
                     <button className="btn btn-sm btn-primary">
-                      Enter Class
+                      <i className="bi bi-box-arrow-in-right"></i> Enter Class
                     </button>
                     <button className="btn btn-sm btn-outline-secondary">
                       <i className="bi bi-three-dots-vertical"></i>
@@ -273,9 +379,35 @@ function TeacherDashboard() {
               <i className="bi bi-graph-up"></i>
               <span>View Analytics</span>
             </button>
+            <button className="action-btn">
+              <i className="bi bi-megaphone"></i>
+              <span>Post Announcement</span>
+            </button>
+            <button className="action-btn">
+              <i className="bi bi-calendar-event"></i>
+              <span>Schedule Event</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {showCreateClassModal && (
+        <CreateClassModal
+          isOpen={showCreateClassModal}
+          onClose={() => setShowCreateClassModal(false)}
+          onClassCreated={fetchTeacherClasses}
+        />
+      )}
+
+      {showAIToolsModal && (
+        <AIToolsModal
+          isOpen={showAIToolsModal}
+          onClose={() => setShowAIToolsModal(false)}
+          toolType={selectedAITool}
+          userDetails={userDetails}
+        />
+      )}
     </div>
   );
 }
