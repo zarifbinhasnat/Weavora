@@ -1,4 +1,3 @@
-// components/login.js
 import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import { auth, db } from "./firebase";
@@ -7,51 +6,43 @@ import SignInwithGoogle from "./signInWIthGoogle";
 import { doc, getDoc } from "firebase/firestore";
 
 function Login() {
-  // State variables for form inputs
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      // Sign in user with email and password
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      console.log("User logged in Successfully");
 
-      // Fetch user profile from Firestore to check role
+    try {
+      // Login
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCred.user;
+
+      // Fetch user profile from Firestore
       const userDoc = await getDoc(doc(db, "Users", user.uid));
-      
+
+      let role = null;
+
       if (userDoc.exists()) {
-        const userData = userDoc.data();
-        userData.role = "teacher "; // For testing purpose only
-        // Check user role and redirect accordingly
-        if (userData.role === "teacher") {
-          // Redirect to teacher dashboard
-          window.location.href = "/teacher-dashboard";
-        } else {
-          // Redirect to student profile/dashboard
-          window.location.href = "/teacher-dashboard";
-        }
-      } else {
-        // If no user data found in Firestore, redirect to profile by default
-        window.location.href = "/teacher-dashboard";
+        const data = userDoc.data();
+        role = data.role;       // REAL role from Firestore
       }
 
-      // Show success message
-      toast.success("User logged in Successfully", {
-        position: "top-center",
-      });
-      
-    } catch (error) {
-      console.log(error.message);
+      // Redirect based on role
+      if (role === "teacher") {
+        window.location.href = "/teacher_dashboard";
+      } else if (role === "student") {
+        window.location.href = "/student_dashboard";
+      } else if (role === "admin") {
+        window.location.href = "/admin_dashboard";
+      } else {
+        // No role found → redirect to profile setup
+        window.location.href = "/profile";
+      }
 
-      // Show error message
-      toast.error(error.message, {
-        position: "bottom-center",
-      });
+      toast.success("Logged in successfully!", { position: "top-center" });
+
+    } catch (error) {
+      toast.error(error.message, { position: "bottom-center" });
     }
   };
 
@@ -59,7 +50,7 @@ function Login() {
     <form onSubmit={handleSubmit}>
       <h3>Login</h3>
 
-      {/* Email Input */}
+      {/* Email */}
       <div className="mb-3">
         <label>Email address</label>
         <input
@@ -71,7 +62,7 @@ function Login() {
         />
       </div>
 
-      {/* Password Input */}
+      {/* Password */}
       <div className="mb-3">
         <label>Password</label>
         <input
@@ -83,19 +74,17 @@ function Login() {
         />
       </div>
 
-      {/* Submit Button */}
+      {/* Submit */}
       <div className="d-grid">
         <button type="submit" className="btn btn-primary">
-          Submit
+          Login
         </button>
       </div>
 
-      {/* Link to Registration */}
       <p className="forgot-password text-right">
-        New user <a href="/register">Register Here</a>
+        New user? <a href="/register">Register Here</a>
       </p>
 
-      {/* Google Sign In Component */}
       <SignInwithGoogle />
     </form>
   );
