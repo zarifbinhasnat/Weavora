@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  MessageSquare, 
-  FileText, 
-  CheckCircle, 
-  CalendarDays, 
+import {
+  MessageSquare,
+  FileText,
+  CheckCircle,
+  CalendarDays,
   Send,
   Sparkles,
   Bot
@@ -21,34 +21,35 @@ interface Message {
   mode?: AIMode;
 }
 
-const modes: { id: AIMode; label: string; icon: React.ElementType; description: string }[] = [
-  { id: "tutor", label: "Tutor", icon: MessageSquare, description: "Ask questions about course material" },
-  { id: "summarizer", label: "Summarizer", icon: FileText, description: "Get concise summaries of lectures" },
-  { id: "evaluator", label: "Evaluator", icon: CheckCircle, description: "Get feedback on your answers" },
-  { id: "planner", label: "Planner", icon: CalendarDays, description: "Plan your study schedule" },
+const modes: {
+  id: AIMode;
+  label: string;
+  icon: React.ElementType;
+  description: string;
+}[] = [
+  { id: "tutor", label: "Tutor", icon: MessageSquare, description: "Ask questions from uploaded course materials" },
+  { id: "summarizer", label: "Summarizer", icon: FileText, description: "Summarize uploaded notes or PDFs" },
+  { id: "evaluator", label: "Evaluator", icon: CheckCircle, description: "Evaluate answers using course content" },
+  { id: "planner", label: "Planner", icon: CalendarDays, description: "Plan studies based on syllabus" },
 ];
-
-const sampleResponses: Record<AIMode, string> = {
-  tutor: "Based on Chapter 5 of your course materials, the concept of machine learning involves algorithms that improve through experience. Would you like me to explain supervised vs unsupervised learning?",
-  summarizer: "**Lecture 12 Summary:**\n\n• Neural networks consist of interconnected nodes organized in layers\n• Backpropagation adjusts weights to minimize error\n• Key takeaway: Deep learning excels at pattern recognition tasks",
-  evaluator: "Your answer demonstrates good understanding of the core concepts. Consider adding:\n\n✓ A specific example to illustrate the point\n✓ Connection to the previous chapter's framework\n\n**Score: 7/10** - Strong foundation, needs more depth",
-  planner: "📅 **This Week's Study Plan:**\n\n**Monday:** Review Chapter 5 (2 hrs)\n**Wednesday:** Practice problems (1.5 hrs)\n**Friday:** Quiz preparation (1 hr)\n\n⏰ Next deadline: Assignment 3 due Thursday",
-};
 
 export function AIAssistant() {
   const [activeMode, setActiveMode] = useState<AIMode>("tutor");
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "1",
+      id: "init",
       role: "assistant",
-      content: "Hello! I'm your AI learning assistant. I'm connected to your course materials and can help you understand concepts, summarize lectures, evaluate your work, or plan your studies. How can I help you today?",
-      mode: "tutor"
-    }
+      content:
+        "Hello! I'm your AI learning assistant. I answer strictly from your uploaded course materials. Ask me anything.",
+      mode: "tutor",
+    },
   ]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -56,15 +57,44 @@ export function AIAssistant() {
       content: input,
     };
 
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "assistant",
-      content: sampleResponses[activeMode],
-      mode: activeMode,
-    };
-
-    setMessages([...messages, userMessage, assistantMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:3001/api/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: input,
+          course: "statistics", // 🔴 change dynamically later
+        }),
+      });
+
+      const data = await res.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.answer || "No answer found.",
+        mode: activeMode,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: "error",
+          role: "assistant",
+          content: "❌ Failed to connect to the RAG server.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,8 +106,12 @@ export function AIAssistant() {
             <Sparkles className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-display font-semibold text-foreground">AI Assistant</h2>
-            <p className="text-xs text-muted-foreground">Powered by your course materials</p>
+            <h2 className="font-display font-semibold text-foreground">
+              AI Assistant
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Powered by your uploaded PDFs (RAG)
+            </p>
           </div>
         </div>
 
@@ -99,15 +133,15 @@ export function AIAssistant() {
             </button>
           ))}
         </div>
-        
+
         <p className="text-xs text-muted-foreground mt-2 text-center">
-          {modes.find(m => m.id === activeMode)?.description}
+          {modes.find((m) => m.id === activeMode)?.description}
         </p>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {messages.map((message) => (
             <motion.div
               key={message.id}
@@ -120,32 +154,19 @@ export function AIAssistant() {
               )}
             >
               {message.role === "assistant" && (
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Bot className="w-4 h-4 text-primary" />
                 </div>
               )}
               <div
                 className={cn(
-                  "max-w-[80%] rounded-xl px-4 py-3 text-sm",
+                  "max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap",
                   message.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground"
                 )}
               >
-                <div className="whitespace-pre-wrap">{message.content}</div>
-                {message.mode && message.role === "assistant" && (
-                  <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1 text-xs opacity-70">
-                    {modes.find(m => m.id === message.mode)?.icon && (
-                      <>
-                        {(() => {
-                          const Icon = modes.find(m => m.id === message.mode)?.icon;
-                          return Icon ? <Icon className="w-3 h-3" /> : null;
-                        })()}
-                      </>
-                    )}
-                    <span>{modes.find(m => m.id === message.mode)?.label} mode</span>
-                  </div>
-                )}
+                {message.content}
               </div>
             </motion.div>
           ))}
@@ -156,14 +177,13 @@ export function AIAssistant() {
       <div className="p-4 border-t bg-card">
         <div className="flex gap-2">
           <input
-            type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder={`Ask in ${activeMode} mode...`}
-            className="flex-1 bg-secondary/50 border-0 rounded-lg px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="flex-1 bg-secondary/50 rounded-lg px-4 py-2.5 text-sm focus:outline-none"
           />
-          <Button onClick={handleSend} className="px-4">
+          <Button onClick={handleSend} disabled={loading}>
             <Send className="w-4 h-4" />
           </Button>
         </div>
