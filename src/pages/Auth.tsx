@@ -7,12 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { auth, db } from "@/components/firebase";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("student");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -52,18 +56,59 @@ export default function Auth() {
 
     setIsLoading(true);
     
-    const success = await login(email, password);
-    
-    if (success) {
-      toast({
-        title: isLogin ? "Welcome back!" : "Account created!",
-        description: "Redirecting to dashboard...",
-      });
-      navigate("/");
-    } else {
+    try {
+      if (isLogin) {
+        // Login flow
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Fetch user role from Firestore
+        const userDoc = await getDoc(doc(db, "Users", user.uid));
+        const userData = userDoc.data();
+        
+        toast({
+          title: "Welcome back!",
+          description: `Logged in as ${userData?.role || 'student'}`,
+        });
+        
+        // Role-based redirect
+        if (userData?.role === "teacher") {
+          navigate("/teacher-dashboard");
+        } else {
+          navigate("/");
+        }
+      } else {
+        // Registration flow
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        if (user) {
+          // Store user data in Firestore
+          await setDoc(doc(db, "Users", user.uid), {
+            email: user.email,
+            firstName: email.split("@")[0], // Default first name from email
+            lastName: "",
+            role: role,
+            photo: ""
+          });
+          
+          toast({
+            title: "Account created!",
+            description: "Redirecting to dashboard...",
+          });
+          
+          // Role-based redirect
+          if (role === "teacher") {
+            navigate("/teacher-dashboard");
+          } else {
+            navigate("/");
+          }
+        }
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Invalid credentials",
+        description: error.message || "Authentication failed",
         variant: "destructive",
       });
     }
@@ -170,6 +215,25 @@ export default function Auth() {
                 </button>
               </div>
             </div>
+
+            {!isLogin && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="space-y-2"
+              >
+                <Label htmlFor="role">I am a</Label>
+                <select
+                  id="role"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                >
+                  <option value="student">Student</option>
+                  <option value="teacher">Teacher</option>
+                </select>
+              </motion.div>
+            )}
 
             {!isLogin && (
               <motion.div 

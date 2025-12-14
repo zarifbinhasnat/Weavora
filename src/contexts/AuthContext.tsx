@@ -1,14 +1,20 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { auth, db } from "@/components/firebase";
+import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 interface User {
   email: string;
   name: string;
+  role?: string;
+  displayName?: string;
   avatar?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => void;
@@ -17,37 +23,67 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem("weavora_user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userDoc = await getDoc(doc(db, "Users", firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUser({
+              email: firebaseUser.email || "",
+              name: userData.firstName + " " + userData.lastName,
+              displayName: userData.firstName + " " + userData.lastName,
+              role: userData.role || "student",
+              avatar: userData.photo || ""
+            });
+          } else {
+            setUser({
+              email: firebaseUser.email || "",
+              name: firebaseUser.email?.split("@")[0] || "User",
+              displayName: firebaseUser.email?.split("@")[0] || "User",
+              role: "student"
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulated login - in production, this would call an API
-    if (email && password.length >= 6) {
-      const newUser = { email, name: email.split("@")[0] };
-      setUser(newUser);
-      localStorage.setItem("weavora_user", JSON.stringify(newUser));
-      return true;
-    }
-    return false;
+    // Login is handled by Firebase Auth in login.js component
+    // This is just for the interface compatibility
+    return true;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("weavora_user");
+  const logout = async () => {
+    try {
+      await firebaseSignOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   const updateProfile = (updates: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem("weavora_user", JSON.stringify(updatedUser));
+      setUser({ ...user, ...updates });
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

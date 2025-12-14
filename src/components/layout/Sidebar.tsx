@@ -23,7 +23,7 @@ interface NavItem {
   badge?: number;
 }
 
-const navItems: NavItem[] = [
+const studentNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
   { icon: BookOpen, label: "Courses", id: "courses" },
   { icon: MessageSquare, label: "AI Assistant", id: "assistant", badge: 3 },
@@ -32,13 +32,24 @@ const navItems: NavItem[] = [
   { icon: Bell, label: "Announcements", id: "announcements", badge: 2 },
 ];
 
+const teacherNavItems: NavItem[] = [
+  { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
+  { icon: BookOpen, label: "My Classes", id: "classes" },
+  { icon: FileText, label: "Documents", id: "documents" },
+  { icon: MessageSquare, label: "Posts", id: "posts" },
+  { icon: Settings, label: "Copy Checker", id: "copy-checker" },
+  { icon: Bell, label: "Notifications", id: "notifications", badge: 3 },
+];
+
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  isTeacher?: boolean;
 }
 
-export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, isTeacher = false }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const navItems = isTeacher ? teacherNavItems : studentNavItems;
 
   return (
     <motion.aside
@@ -60,7 +71,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             className="flex flex-col"
           >
             <span className="font-display font-semibold text-foreground">Weavora</span>
-            <span className="text-xs text-muted-foreground">AI Classroom</span>
+            <span className="text-xs text-muted-foreground">{isTeacher ? "Teacher Portal" : "AI Classroom"}</span>
           </motion.div>
         )}
       </div>
