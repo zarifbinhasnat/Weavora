@@ -1,9 +1,9 @@
+// firebase.js
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import {getAuth} from "firebase/auth";
-import {getFirestore} from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage"; // Add this for file uploads
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -18,6 +18,14 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-export const auth=getAuth();
-export const db=getFirestore(app);
+// Export authentication instance
+export const auth = getAuth(app);
+
+// Export Firestore database instance
+export const db = getFirestore(app);
+
+// Export Storage instance for file uploads
+export const storage = getStorage(app);
+
+// Export the app as default
 export default app;
