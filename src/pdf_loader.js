@@ -7,7 +7,7 @@ import { exec } from "child_process";
 export async function extractTextFromPDF(pdfPath) {
     const buffer = fs.readFileSync(pdfPath);
 
-    // 1️⃣ Extract selectable text
+
     const parsed = await pdf(buffer);
     let selectableText = parsed.text || "";
 
@@ -15,7 +15,7 @@ export async function extractTextFromPDF(pdfPath) {
 
     let ocrText = "";
 
-    // 2️⃣ Run OCR only if text is weak
+   
     if (selectableText.trim().length < 1000) {
         console.log("⚠ Scanned or weak-text PDF detected, running OCR");
 

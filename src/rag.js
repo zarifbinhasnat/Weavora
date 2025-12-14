@@ -11,18 +11,12 @@ import {
 import { Document } from "@langchain/core/documents";
 import { extractTextFromPDF } from "./pdf_loader.js";
 
-/* =========================
-   EMBEDDINGS CONFIG
-========================= */
 const embeddings = new GoogleGenerativeAIEmbeddings({
   apiKey: process.env.GEMINI_API_KEY,
   model: "text-embedding-004",
   apiVersion: "v1",
 });
 
-/* =========================
-   BUILD VECTOR STORE
-========================= */
 export async function buildVectorStore(courseName) {
   const courseDir = path.join("data", courseName);
   if (!fs.existsSync(courseDir)) {
@@ -80,9 +74,6 @@ export async function buildVectorStore(courseName) {
   console.log(`✔ Vector store built: ${courseName}`);
 }
 
-/* =========================
-   RUN RAG QUERY
-========================= */
 export async function runRAG(question, courseName) {
   const embPath = path.join("embeddings", `${courseName}.json`);
 
@@ -95,10 +86,9 @@ export async function runRAG(question, courseName) {
     throw new Error("❌ Embeddings file is empty");
   }
 
-  // Embed the question
+
   const qVec = await embeddings.embedQuery(question);
 
-  // Cosine similarity
   const cosine = (a, b) => {
     let dot = 0, na = 0, nb = 0;
     for (let i = 0; i < a.length; i++) {
@@ -109,14 +99,13 @@ export async function runRAG(question, courseName) {
     return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-12);
   };
 
-  // Retrieve top chunks
   const top = store
     .map(x => ({
       text: x.text,
       score: cosine(qVec, x.embedding),
     }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5); // IMPORTANT for multi-part questions
+    .slice(0, 5); 
 
   console.log("\n🔍 Top Retrieved Chunks:");
   top.forEach((r, i) => {
@@ -132,9 +121,6 @@ export async function runRAG(question, courseName) {
     apiVersion: "v1",
   });
 
-  /* =========================
-     CORRECT EXAM PROMPT
-  ========================= */
   const prompt = `
 You are a university-level academic assistant.
 
