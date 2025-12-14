@@ -1,25 +1,29 @@
+# Dependencies
 node_modules/
 vendor/
 
+# Build outputs
 dist/
 build/
 output/
 *.exe
 *.dll
 
+# Runtime generated
 embeddings/
-data/
-*_imgs/
+data/**/*.pdf
+data/**/*_imgs/
 
+# Environment
 .env
 .env.local
 
-
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-
+# OS
 .DS_Store
 Thumbs.db

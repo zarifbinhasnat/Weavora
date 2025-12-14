@@ -1,0 +1,3 @@
+Machine learning is the study of algorithms that learn patterns from data.
+It includes supervised, unsupervised, and reinforcement learning.
+Common tasks are classification, regression, clustering, and control.
