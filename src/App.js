@@ -1,5 +1,6 @@
 // App.js
 import React, { useEffect, useState } from "react";
+import ChatBox from "./components/ChatBox";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 import {
