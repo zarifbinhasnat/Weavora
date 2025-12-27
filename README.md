@@ -1,7 +1,8 @@
 # 🧵 Weavora – AI-Powered Academic Ecosystem  
 *A unified, intelligent learning platform that weaves together classroom management, AI tutoring, AI grading, communication, and productivity tools into one seamless experience.*
 
-
+> Based on the CSE 4510: Software Development Project Proposal.  
+> Source: Project slides (formerly “Campus Hub”, now Weavora).  
 
 ---
 
@@ -139,7 +140,7 @@ Weavora unifies everything into one ecosystem—AI tutoring, AI auto-grading, le
 
 ## 📜 License
 
-MIT License
+MIT License (or add a custom license here).
 
 ---
 
