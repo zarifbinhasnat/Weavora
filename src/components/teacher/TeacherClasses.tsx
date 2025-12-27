@@ -211,3 +211,4 @@ export function TeacherClasses({ limit, onCreateClass }: TeacherClassesProps) {
     </div>
   );
 }
+ 
