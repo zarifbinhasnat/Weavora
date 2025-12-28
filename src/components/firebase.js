@@ -1,31 +1,23 @@
-// firebase.js
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage"; // Add this for file uploads
+import { getStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDrB9FupDgjjVk4_guLC24ydG3retE3bME",
-  authDomain: "login-auth-4736e.firebaseapp.com",
-  projectId: "login-auth-4736e",
-  storageBucket: "login-auth-4736e.appspot.com",
-  messagingSenderId: "10562914305",
-  appId: "1:10562914305:web:2cff37be4fa9ccf0a29800"
+  apiKey: "AIzaSyBxADjkwSMuQQhM94ThQ6oHVMDy0VP_A2o",
+  authDomain: "campus-hub-38d7c.firebaseapp.com",
+  databaseURL: "https://campus-hub-38d7c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "campus-hub-38d7c",
+  storageBucket: "campus-hub-38d7c.firebasestorage.app",
+  messagingSenderId: "224989853174",
+  appId: "1:224989853174:web:a9e18e3a96cf430aa203d7",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Export authentication instance
-export const auth = getAuth(app);
-
-// Export Firestore database instance
+// ✅ Firestore (this is what your code uses)
 export const db = getFirestore(app);
 
-// Export Storage instance for file uploads
+// ✅ Storage (optional, for uploads later)
 export const storage = getStorage(app);
 
-// Export the app as default
 export default app;

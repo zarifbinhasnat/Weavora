@@ -16,21 +16,37 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./UserMenu";
 
+
+
+import { NavLink } from "react-router-dom";
+
+<NavLink
+  to="/courses"
+  className={({ isActive }) =>
+    `...your classes... ${isActive ? "bg-muted" : ""}`
+  }
+>
+  Courses
+</NavLink>
+
+
 interface NavItem {
   icon: React.ElementType;
   label: string;
   id: string;
   badge?: number;
+  to?: string; // ✅ add this
 }
 
 const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
-  { icon: BookOpen, label: "Courses", id: "courses" },
+  { icon: LayoutDashboard, label: "Dashboard", id: "dashboard", to: "/dashboard" },
+  { icon: BookOpen, label: "Courses", id: "courses", to: "/courses" },
   { icon: MessageSquare, label: "AI Assistant", id: "assistant", badge: 3 },
   { icon: FileText, label: "Materials", id: "materials" },
   { icon: Calendar, label: "Schedule", id: "schedule" },
   { icon: Bell, label: "Announcements", id: "announcements", badge: 2 },
 ];
+
 
 interface SidebarProps {
   activeTab: string;
@@ -66,34 +82,70 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <Button
-            key={item.id}
-            variant={activeTab === item.id ? "nav-active" : "nav-inactive"}
-            className={cn(
-              "w-full justify-start gap-3 relative",
-              collapsed && "justify-center px-0"
+     <nav className="flex-1 px-3 py-4 space-y-1">
+  {navItems.map((item) => {
+    // ✅ If item has "to", use NavLink
+    if (item.to) {
+      return (
+        <NavLink key={item.id} to={item.to} className="block">
+          {({ isActive }) => (
+            <Button
+              variant={isActive ? "nav-active" : "nav-inactive"}
+              className={cn(
+                "w-full justify-start gap-3 relative",
+                collapsed && "justify-center px-0"
+              )}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge && (
+                    <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </>
+              )}
+              {collapsed && item.badge && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+              )}
+            </Button>
+          )}
+        </NavLink>
+      );
+    }
+
+    // ✅ Otherwise keep old tab logic
+    return (
+      <Button
+        key={item.id}
+        variant={activeTab === item.id ? "nav-active" : "nav-inactive"}
+        className={cn(
+          "w-full justify-start gap-3 relative",
+          collapsed && "justify-center px-0"
+        )}
+        onClick={() => onTabChange(item.id)}
+      >
+        <item.icon className="w-5 h-5 flex-shrink-0" />
+        {!collapsed && (
+          <>
+            <span className="flex-1 text-left">{item.label}</span>
+            {item.badge && (
+              <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                {item.badge}
+              </span>
             )}
-            onClick={() => onTabChange(item.id)}
-          >
-            <item.icon className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge && (
-                  <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
-              </>
-            )}
-            {collapsed && item.badge && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-            )}
-          </Button>
-        ))}
-      </nav>
+          </>
+        )}
+        {collapsed && item.badge && (
+          <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+        )}
+      </Button>
+    );
+  })}
+</nav>
+
 
       {/* Footer */}
       <div className="p-3 border-t border-border space-y-1">
