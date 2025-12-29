@@ -48,6 +48,21 @@ export function AIAssistant() {
     },
   ]);
 
+  const getInitialMessage = (mode: AIMode): string => {
+    switch (mode) {
+      case "tutor":
+        return "Hello! I'm your AI tutor. Ask me any question about your course materials.";
+      case "summarizer":
+        return "Hi! I can summarize your notes and PDFs. Share what you'd like me to summarize.";
+      case "evaluator":
+        return "Hello! I can evaluate your answers based on course content. Share your answer to get feedback.";
+      case "planner":
+        return "Hi! I can help you plan your studies based on deadlines, syllabus, and your progress. Ask me to generate a study schedule, suggest priorities, or track your goals.";
+      default:
+        return "Hello! How can I assist you today?";
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
@@ -62,15 +77,27 @@ export function AIAssistant() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:3001/api/ask", {
+      // Different endpoint based on active mode
+      let endpoint = "http://localhost:3001/api/ask";
+      let requestBody: any = {
+        question: input,
+        course: "statistics", // 🔴 change dynamically later
+      };
+
+      if (activeMode === "planner") {
+        endpoint = "http://localhost:3001/api/schedule/generate";
+        requestBody = {
+          prompt: input,
+          userId: "current-user-id", // 🔴 change dynamically from auth
+        };
+      }
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          question: input,
-          course: "statistics", // 🔴 change dynamically later
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await res.json();
@@ -78,7 +105,7 @@ export function AIAssistant() {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.answer || "No answer found.",
+        content: data.answer || data.schedule || data.response || "No answer found.",
         mode: activeMode,
       };
 
@@ -89,7 +116,9 @@ export function AIAssistant() {
         {
           id: "error",
           role: "assistant",
-          content: "❌ Failed to connect to the RAG server.",
+          content: activeMode === "planner" 
+            ? "❌ Failed to connect to the planner service." 
+            : "❌ Failed to connect to the RAG server.",
         },
       ]);
     } finally {
@@ -120,7 +149,17 @@ export function AIAssistant() {
           {modes.map((mode) => (
             <button
               key={mode.id}
-              onClick={() => setActiveMode(mode.id)}
+              onClick={() => {
+                setActiveMode(mode.id);
+                setMessages([
+                  {
+                    id: "init",
+                    role: "assistant",
+                    content: getInitialMessage(mode.id),
+                    mode: mode.id,
+                  },
+                ]);
+              }}
               className={cn(
                 "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all",
                 activeMode === mode.id

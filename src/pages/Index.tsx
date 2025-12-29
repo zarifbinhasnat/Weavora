@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CourseCard } from "@/components/dashboard/CourseCard";
@@ -7,7 +7,10 @@ import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
 import { Announcements } from "@/components/dashboard/Announcements";
 import { QuickStats } from "@/components/dashboard/QuickStats";
 import { AnnouncementsPage } from "./AnnouncementsPage";
+import { SchedulePage } from "./SchedulePage";
+import { MaterialsOverview } from "./MaterialsOverview";
 import { Search, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const courses = [
   { title: "Machine Learning Fundamentals", code: "CS 4501", instructor: "Dr. Sarah Chen", progress: 68, nextClass: "Today, 2:00 PM", students: 45 },
@@ -18,12 +21,51 @@ const courses = [
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { user } = useAuth();
+  const coursesRef = useRef<HTMLElement>(null);
+  const assistantRef = useRef<HTMLElement>(null);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    
+    // Scroll to courses section when Courses tab is clicked
+    if (tab === "courses" && coursesRef.current) {
+      coursesRef.current.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "start" 
+      });
+    }
+    
+    // Scroll to AI Assistant section when AI Assistant tab is clicked
+    if (tab === "assistant" && assistantRef.current) {
+      assistantRef.current.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "start" 
+      });
+    }
+  };
 
   const renderContent = () => {
     if (activeTab === "announcements") {
       return (
         <div className="p-6">
           <AnnouncementsPage />
+        </div>
+      );
+    }
+
+    if (activeTab === "schedule") {
+      return (
+        <div className="p-6">
+          <SchedulePage />
+        </div>
+      );
+    }
+
+    if (activeTab === "materials") {
+      return (
+        <div className="p-6">
+          <MaterialsOverview />
         </div>
       );
     }
@@ -40,7 +82,7 @@ export default function Index() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-2xl font-display font-semibold text-foreground"
               >
-                Welcome back, Zarif
+                Welcome back, {user?.name || user?.displayName || "Student"}
               </motion.h1>
               <p className="text-sm text-muted-foreground">Here's what's happening with your courses today.</p>
             </div>
@@ -72,7 +114,7 @@ export default function Index() {
             {/* Main Content */}
             <div className="xl:col-span-2 space-y-6">
               {/* Courses */}
-              <section>
+              <section ref={coursesRef}>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-display font-semibold text-foreground">Your Courses</h2>
                   <button className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
@@ -87,7 +129,7 @@ export default function Index() {
               </section>
 
               {/* AI Assistant */}
-              <section>
+              <section ref={assistantRef}>
                 <h2 className="text-lg font-display font-semibold text-foreground mb-4">AI Learning Assistant</h2>
                 <div className="h-[500px]">
                   <AIAssistant />
@@ -108,7 +150,7 @@ export default function Index() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
       
       <main className="flex-1 overflow-y-auto">
         {renderContent()}

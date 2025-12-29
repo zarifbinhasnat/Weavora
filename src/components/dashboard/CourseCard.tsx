@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { BookOpen, Clock, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface CourseCardProps {
   title: string;
@@ -20,12 +21,19 @@ export function CourseCard({
   students,
   delay = 0 
 }: CourseCardProps) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/course/${code}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: delay * 0.1 }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      onClick={handleClick}
       className="group relative bg-card rounded-xl border border-border p-5 cursor-pointer shadow-card transition-shadow duration-300 hover:shadow-card-hover"
     >
       {/* Progress indicator */}
