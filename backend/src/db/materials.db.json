@@ -1,0 +1,20 @@
+[
+  {
+    "id": "5d256f5a-c8fc-4a29-98ff-e068f416940e",
+    "courseId": "CSE4401",
+    "title": "labfinal.pdf",
+    "type": "material",
+    "uploadedBy": "teacher",
+    "path": "storage/materials/CSE4401/labfinal.pdf",
+    "createdAt": "2025-12-29T04:00:50.749Z"
+  },
+  {
+    "id": "c92e4494-3fc6-466e-913c-95b4ed897835",
+    "courseId": "CSE4501",
+    "title": "Kendall and Kendall - Systems Analysis and Design [10th Edition].pdf",
+    "type": "material",
+    "uploadedBy": "teacher",
+    "path": "storage/materials/CSE4501/Kendall and Kendall - Systems Analysis and Design [10th Edition].pdf",
+    "createdAt": "2025-12-29T04:00:50.750Z"
+  }
+]
