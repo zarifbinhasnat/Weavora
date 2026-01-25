@@ -16,7 +16,7 @@ function CreateClassModal({ isOpen, onClose, onClassCreated }) {
   if (!isOpen) return null;
 
   // Generate random 6-character class code
-  const generateClassCode = () => {
+  const generateClassCode = () => {a
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let code = "";
     for (let i = 0; i < 6; i++) {
