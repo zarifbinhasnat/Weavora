@@ -6,7 +6,7 @@ import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
 import { Announcements } from "@/components/dashboard/Announcements";
 import { QuickStats } from "@/components/dashboard/QuickStats";
-import { AnnouncementsPage } from "./AnnouncementsPage";
+import AnnouncementsPage from "./AnnouncementsPage";
 import { SchedulePage } from "./SchedulePage";
 import { MaterialsOverview } from "./MaterialsOverview";
 import { Search, User } from "lucide-react";

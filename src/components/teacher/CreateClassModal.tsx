@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import { createCourse } from "../backend/courses";
+import { auth } from "../backend/firebase";
+
 
 interface CreateClassModalProps {
   onClose: () => void;
@@ -14,12 +17,37 @@ export function CreateClassModal({ onClose }: CreateClassModalProps) {
     description: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle class creation
-    console.log("Creating class:", formData);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const user = auth.currentUser;
+  if (!user) {
+    alert("Please login first.");
+    return;
+  }
+
+  try {
+    const res = await createCourse({
+  name: formData.name,
+  description: formData.description,
+  subject: formData.subject,
+  courseCode: formData.code,
+  teacherUid: user.uid,
+  teacherName: user.email ?? "",
+});
+
+
+    alert(`Class created!\nJoin code: ${res.joinCode}`);
+    console.log("Created course:", res);
+
     onClose();
-  };
+  } catch (err: unknown) {
+    console.error(err);
+    const errorMessage = err instanceof Error ? err.message : "Failed to create class";
+    alert(errorMessage);
+  }
+};
+
 
   return (
     <motion.div
