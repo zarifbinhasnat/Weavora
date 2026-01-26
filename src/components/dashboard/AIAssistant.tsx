@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { answerWithRAG } from "@/components/backend/embeddings";
 
 type AIMode = "tutor" | "summarizer" | "evaluator" | "planner";
 
@@ -77,48 +78,63 @@ export function AIAssistant() {
     setLoading(true);
 
     try {
-      // Different endpoint based on active mode
-      let endpoint = "http://localhost:3001/api/ask";
-      let requestBody: any = {
-        question: input,
-        course: "statistics", // 🔴 change dynamically later
-      };
+      const courseId = "CS4501"; // TODO: Get from context/route
 
-      if (activeMode === "planner") {
-        endpoint = "http://localhost:3001/api/schedule/generate";
-        requestBody = {
-          prompt: input,
-          userId: "current-user-id", // 🔴 change dynamically from auth
+      // Use RAG system for tutor mode
+      if (activeMode === "tutor") {
+        const answer = await answerWithRAG(courseId, input);
+
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: answer,
+          mode: activeMode,
         };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        // For other modes, use external API (if available)
+        let endpoint = "http://localhost:3001/api/ask";
+        let requestBody: any = {
+          question: input,
+          course: "statistics",
+        };
+
+        if (activeMode === "planner") {
+          endpoint = "http://localhost:3001/api/schedule/generate";
+          requestBody = {
+            prompt: input,
+            userId: "current-user-id",
+          };
+        }
+
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        const data = await res.json();
+
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.answer || data.schedule || data.response || "No answer found.",
+          mode: activeMode,
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
       }
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await res.json();
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.answer || data.schedule || data.response || "No answer found.",
-        mode: activeMode,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
+      console.error("AI Assistant error:", err);
       setMessages((prev) => [
         ...prev,
         {
           id: "error",
           role: "assistant",
-          content: activeMode === "planner" 
-            ? "❌ Failed to connect to the planner service." 
-            : "❌ Failed to connect to the RAG server.",
+          content: "❌ Failed to get response. Please make sure course materials are uploaded.",
         },
       ]);
     } finally {

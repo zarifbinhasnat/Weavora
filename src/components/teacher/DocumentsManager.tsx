@@ -8,16 +8,20 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/components/backend/firebase";
+import { generateEmbeddingsFromLink } from "@/components/backend/embeddings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Eye, Trash2, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { FileText, Eye, Trash2, Plus, Sparkles, Loader2, CheckCircle } from "lucide-react";
 
 interface DocType {
   id: string;
   title: string;
   description: string;
   pdfUrl: string;
+  embeddingsGenerated?: boolean;
+  embeddingsGeneratedAt?: any;
 }
 
 export default function DocumentsManager() {
@@ -26,6 +30,11 @@ export default function DocumentsManager() {
   const [description, setDescription] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
+
+  // Get courseId from context or URL - for now using a default
+  const courseId = "CS4501"; // TODO: Get from course context
 
   const fetchDocs = async () => {
     const snap = await getDocs(collection(db, "Documents"));
@@ -42,19 +51,63 @@ export default function DocumentsManager() {
   }, []);
 
   const addDocument = async () => {
-    if (!title || !pdfUrl) return;
+    if (!title || !pdfUrl) {
+      toast({
+        title: "Missing fields",
+        description: "Please provide both title and PDF URL",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    await addDoc(collection(db, "Documents"), {
-      title,
-      description,
-      pdfUrl,
-      createdAt: Timestamp.now(),
-    });
+    setIsGenerating(true);
 
-    setTitle("");
-    setDescription("");
-    setPdfUrl("");
-    fetchDocs();
+    try {
+      // 1. Add document to Firestore
+      const docRef = await addDoc(collection(db, "Documents"), {
+        title,
+        description,
+        pdfUrl,
+        embeddingsGenerated: false,
+        createdAt: Timestamp.now(),
+      });
+
+      toast({
+        title: "Document added!",
+        description: "Generating embeddings in background...",
+      });
+
+      // 2. Automatically generate embeddings in background
+      generateEmbeddingsFromLink(courseId, docRef.id, pdfUrl, title)
+        .then(() => {
+          toast({
+            title: "Embeddings generated!",
+            description: `${title} is now searchable by AI`,
+          });
+          fetchDocs(); // Refresh to show updated status
+        })
+        .catch((error) => {
+          console.error("Background embedding generation failed:", error);
+          toast({
+            title: "Embedding generation failed",
+            description: "Document added but AI search may not work",
+            variant: "destructive",
+          });
+        });
+
+      setTitle("");
+      setDescription("");
+      setPdfUrl("");
+      fetchDocs();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const removeDocument = async (id: string) => {
@@ -81,8 +134,17 @@ export default function DocumentsManager() {
           value={pdfUrl}
           onChange={(e) => setPdfUrl(e.target.value)}
         />
-        <Button onClick={addDocument} className="gap-2">
-          <Plus className="w-4 h-4" /> Add Document
+        <Button onClick={addDocument} className="gap-2" disabled={isGenerating}>
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Adding & Processing...
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" /> Add Document
+            </>
+          )}
         </Button>
       </div>
 
@@ -90,15 +152,31 @@ export default function DocumentsManager() {
       <div className="grid md:grid-cols-2 gap-4">
         {docs.map((d) => (
           <div key={d.id} className="border rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-primary" />
-              <div>
-                <p className="font-semibold">{d.title}</p>
-                <p className="text-xs text-muted-foreground">PDF linked</p>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{d.title}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    {d.embeddingsGenerated ? (
+                      <>
+                        <CheckCircle className="w-3 h-3 text-green-600" />
+                        <span className="text-green-600">AI-searchable</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3 text-yellow-600" />
+                        <span className="text-yellow-600">Processing embeddings...</span>
+                      </>
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground">{d.description}</p>
+            {d.description && (
+              <p className="text-sm text-muted-foreground">{d.description}</p>
+            )}
 
             <div className="flex gap-2">
               <Button size="sm" variant="secondary" onClick={() => setPreview(d.pdfUrl)}>
