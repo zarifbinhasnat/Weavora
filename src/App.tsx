@@ -10,7 +10,7 @@ import Auth from "./pages/Auth";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import CoursePage from "./pages/CoursePage";
 import MaterialsPage from "./pages/MaterialsPage";
-import AnnouncementsPage from "./pages/AnnouncementsPage"; // ✅ ADD
+import AnnouncementsPage from "./pages/AnnouncementsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,7 +67,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ✅ ADD THIS ROUTE */}
       <Route
         path="/course/:courseCode/announcements"
         element={
@@ -91,18 +90,20 @@ function AppRoutes() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Sonner />
+          <Toaster />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

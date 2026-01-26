@@ -1,11 +1,12 @@
 import React from "react";
 import ChatAndDiscussion from "../ui/ChatAndDiscussion";
 
-export default function ClassroomPosts() {
+const ChatPage: React.FC = () => {
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>Classroom Posts Loaded</h1>
+    <div>
       <ChatAndDiscussion />
     </div>
   );
-}
+};
+
+export default ChatPage;
