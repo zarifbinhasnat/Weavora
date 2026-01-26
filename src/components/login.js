@@ -1,6 +1,6 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
-import { auth, db } from "./firebase";
+import { auth, db } from "./backend/firebase";
 import { toast } from "react-toastify";
 import SignInwithGoogle from "./signInWIthGoogle";
 import { doc, getDoc } from "firebase/firestore";
@@ -20,7 +20,7 @@ function Login() {
       // Fetch user profile from Firestore
       const userDoc = await getDoc(doc(db, "Users", user.uid));
 
-      let role = null;
+      let role = "teacher"; // Default role
 
       if (userDoc.exists()) {
         const data = userDoc.data();
@@ -35,7 +35,7 @@ function Login() {
       } else if (role === "admin") {
         window.location.href = "/admin_dashboard";
       } else {
-        // No role found → redirect to profile setup
+        // No role found -> redirect to profile setup
         window.location.href = "/profile";
       }
 
@@ -47,8 +47,9 @@ function Login() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>Login</h3>
+    <div>
+      <form onSubmit={handleSubmit}>
+        <h3>Login</h3>
 
       {/* Email */}
       <div className="mb-3">
@@ -85,9 +86,11 @@ function Login() {
         New user? <a href="/register">Register Here</a>
       </p>
 
-      <SignInwithGoogle />
-    </form>
+        <SignInwithGoogle />
+      </form>
+    </div>
   );
 }
 
 export default Login;
+

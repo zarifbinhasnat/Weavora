@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Sidebar } from "@/components/layout/Sidebar";
+import DocumentsManager from "@/components/teacher/DocumentsManager";
 import { Search, User, Bell } from "lucide-react";
 
 // Import components properly
@@ -78,12 +79,15 @@ export default function TeacherDashboard() {
         );
       
       case "documents":
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-display font-semibold text-foreground mb-6">Document Management</h2>
-            <div>Documents section coming soon...</div>
-          </div>
-        );
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-display font-semibold mb-6">
+        Document Management
+      </h2>
+      <DocumentsManager />
+    </div>
+  );
+
       
       case "copy-checker":
         return (
@@ -154,11 +158,7 @@ export default function TeacherDashboard() {
 
               {/* Quick Actions */}
               <section className="mb-8">
-                <QuickActions />
-              </section>
-
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* Main Conte
+                <QuickActions 
                   onCreateClass={() => setShowCreateClass(true)}
                   onUploadDocument={() => setShowUploadDoc(true)}
                   onCheckCopy={() => setShowCopyChecker(true)}
