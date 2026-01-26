@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
-import pdf from "pdf-parse";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 import Tesseract from "tesseract.js";
 import { exec } from "child_process";
 
@@ -8,7 +10,7 @@ export async function extractTextFromPDF(pdfPath) {
     const buffer = fs.readFileSync(pdfPath);
 
 
-    const parsed = await pdf(buffer);
+    const parsed = await pdfParse(buffer);
     let selectableText = parsed.text || "";
 
     console.log("📄 Extracted selectable text length:", selectableText.length);
