@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, BookOpen, Calendar, FileText, Users, MessageSquare, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ClassroomPosts from "@/components/teacher/ClassroomPosts";
 
 // Mock data - will be replaced with real data later
 const coursesData = {
@@ -150,6 +151,17 @@ export default function CoursePage() {
                 Posts
               </button>
               <button
+                onClick={() => setActiveSection("chat")}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  activeSection === "chat"
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4 inline mr-2" />
+                Chat & Discussion
+              </button>
+              <button
                 onClick={() => handleMaterialsClick()}
                 className="px-4 py-2 font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -216,6 +228,11 @@ export default function CoursePage() {
                   </motion.div>
                 ))}
               </div>
+            )}
+
+            {/* Chat & Discussion Section */}
+            {activeSection === "chat" && (
+              <ClassroomPosts />
             )}
           </div>
         </div>

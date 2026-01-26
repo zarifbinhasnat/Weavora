@@ -12,6 +12,8 @@ import CoursePage from "./pages/CoursePage";
 import MaterialsPage from "./pages/MaterialsPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import NotFound from "./pages/NotFound";
+import ClassroomPosts from "./components/teacher/ClassroomPosts";
+import ChatPage from "./components/teacher/ChatPage";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +74,24 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AnnouncementsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/course/:courseCode/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/course/:courseCode/posts"
+        element={
+          <ProtectedRoute>
+            <ClassroomPosts />
           </ProtectedRoute>
         }
       />
