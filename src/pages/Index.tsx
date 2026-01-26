@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CourseCard } from "@/components/dashboard/CourseCard";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
@@ -22,6 +23,7 @@ const courses = [
 export default function Index() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { user } = useAuth();
+  const navigate = useNavigate();
   const coursesRef = useRef<HTMLElement>(null);
   const assistantRef = useRef<HTMLElement>(null);
 
@@ -141,6 +143,21 @@ export default function Index() {
             <div className="space-y-6">
               <UpcomingDeadlines />
               <Announcements />
+              
+              {/* Chat & Discussion Card */}
+              <div className="bg-card rounded-xl border shadow-card p-5 cursor-pointer hover:shadow-lg transition-all hover:border-primary/50"
+                   onClick={() => navigate('/course/CS%204501/chat')}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground mb-1">Chat & Discussion</h3>
+                    <p className="text-xs text-muted-foreground">Join conversations with classmates</p>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>

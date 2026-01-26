@@ -47,11 +47,6 @@ const announcements: Announcement[] = [
 ];
 
 export function Announcements() {
-  const navigate = useNavigate();
-
-  const goToChat = () => {
-    navigate("/teacher/chat");
-  };
 
   return (
     <div className="bg-card rounded-xl border shadow-card p-5">
@@ -74,9 +69,8 @@ export function Announcements() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={goToChat}
             className={cn(
-              "group p-3 rounded-lg border transition-all hover:bg-secondary/50 cursor-pointer",
+              "group p-3 rounded-lg border transition-all hover:bg-secondary/50",
               announcement.unread
                 ? "bg-primary/5 border-primary/20"
                 : "bg-card border-border"
@@ -121,12 +115,7 @@ export function Announcements() {
         ))}
       </div>
 
-      <button
-        onClick={goToChat}
-        className="w-full mt-4 text-center text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-      >
-        Go to Chat & Discussion →
-      </button>
+
     </div>
   );
 }

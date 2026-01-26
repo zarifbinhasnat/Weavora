@@ -4,6 +4,7 @@ import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 interface User {
+  uid: string;
   email: string;
   name: string;
   role?: string;
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUser({
+              uid: firebaseUser.uid,
               email: firebaseUser.email || "",
               name: userData.firstName + " " + userData.lastName,
               displayName: userData.firstName + " " + userData.lastName,
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
           } else {
             setUser({
+              uid: firebaseUser.uid,
               email: firebaseUser.email || "",
               name: firebaseUser.email?.split("@")[0] || "User",
               displayName: firebaseUser.email?.split("@")[0] || "User",

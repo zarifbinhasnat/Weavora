@@ -14,6 +14,7 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import NotFound from "./pages/NotFound";
 import ClassroomPosts from "./components/teacher/ClassroomPosts";
 import ChatPage from "./components/teacher/ChatPage";
+import ChatDiscussion from "./components/teacher/ChatDiscussion";
 
 const queryClient = new QueryClient();
 
@@ -82,7 +83,7 @@ function AppRoutes() {
         path="/course/:courseCode/chat"
         element={
           <ProtectedRoute>
-            <ChatPage />
+            <ChatDiscussion />
           </ProtectedRoute>
         }
       />

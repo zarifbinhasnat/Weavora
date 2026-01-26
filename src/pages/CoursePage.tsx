@@ -182,55 +182,88 @@ export default function CoursePage() {
 
             {/* Posts Section */}
             {activeSection === "posts" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Announcements & Updates</h2>
-                  <Button variant="outline" size="sm">
-                    <Upload className="w-4 h-4 mr-2" />
-                    New Post
-                  </Button>
-                </div>
+              <div className="space-y-6">
+                {/* Announcements Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Announcements & Updates</h2>
+                    <Button variant="outline" size="sm">
+                      <Upload className="w-4 h-4 mr-2" />
+                      New Post
+                    </Button>
+                  </div>
 
-                {mockPosts.map((post, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Card>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-semibold text-primary-foreground">
-                              {post.author.split(" ").map(n => n[0]).join("")}
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <div>
-                                <p className="font-semibold text-foreground">{post.author}</p>
-                                <p className="text-sm text-muted-foreground">{post.date}</p>
-                              </div>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                post.type === "announcement" 
-                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                              }`}>
-                                {post.type}
+                  {mockPosts.map((post, index) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-semibold text-primary-foreground">
+                                {post.author.split(" ").map(n => n[0]).join("")}
                               </span>
                             </div>
-                            <p className="text-muted-foreground">{post.content}</p>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <div>
+                                  <p className="font-semibold text-foreground">{post.author}</p>
+                                  <p className="text-sm text-muted-foreground">{post.date}</p>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  post.type === "announcement" 
+                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                    : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                                }`}>
+                                  {post.type}
+                                </span>
+                              </div>
+                              <p className="text-muted-foreground">{post.content}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Chat & Discussion Box */}
+                <div className="mt-6">
+                  <Card 
+                    className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 border-border hover:border-primary bg-gradient-to-br from-primary/5 to-transparent"
+                    onClick={() => navigate(`/course/${courseCode}/chat`)}
+                  >
+                    <CardContent className="p-8">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
+                            <MessageSquare className="w-8 h-8 text-primary-foreground" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-2xl text-foreground mb-2">
+                              Chat & Discussion
+                            </h3>
+                            <p className="text-base text-muted-foreground">
+                              Join the conversation with classmates and instructors
+                            </p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
+                        <Button className="gap-2 px-6 py-6 text-base font-semibold">
+                          Open Chat
+                          <MessageSquare className="w-5 h-5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             )}
 
-            {/* Chat & Discussion Section */}
+            {/* Chat & Discussion Section (when tab is active) */}
             {activeSection === "chat" && (
               <ClassroomPosts />
             )}
