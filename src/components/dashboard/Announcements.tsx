@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Bell, Pin, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface Announcement {
   id: string;
@@ -16,7 +17,8 @@ const announcements: Announcement[] = [
   {
     id: "1",
     title: "Office Hours Update",
-    preview: "My office hours this week will be moved to Thursday 3-5 PM due to the faculty meeting...",
+    preview:
+      "My office hours this week will be moved to Thursday 3-5 PM due to the faculty meeting...",
     course: "Machine Learning",
     date: "2 hours ago",
     pinned: true,
@@ -25,7 +27,8 @@ const announcements: Announcement[] = [
   {
     id: "2",
     title: "Guest Lecture Next Week",
-    preview: "We have an exciting guest speaker from Google AI joining us next Wednesday to discuss...",
+    preview:
+      "We have an exciting guest speaker from Google AI joining us next Wednesday to discuss...",
     course: "AI Fundamentals",
     date: "Yesterday",
     pinned: false,
@@ -34,7 +37,8 @@ const announcements: Announcement[] = [
   {
     id: "3",
     title: "Assignment 3 Clarification",
-    preview: "Several students asked about the data preprocessing section. Here's some additional guidance...",
+    preview:
+      "Several students asked about the data preprocessing section. Here's some additional guidance...",
     course: "Data Ethics",
     date: "2 days ago",
     pinned: false,
@@ -42,16 +46,20 @@ const announcements: Announcement[] = [
   },
 ];
 
-interface AnnouncementsProps {
-  onViewAll?: () => void;
-}
+export function Announcements() {
+  const navigate = useNavigate();
 
-export function Announcements({ onViewAll }: AnnouncementsProps) {
+  const goToChat = () => {
+    navigate("/teacher/chat");
+  };
+
   return (
     <div className="bg-card rounded-xl border shadow-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-display font-semibold text-foreground">Announcements</h2>
+          <h2 className="font-display font-semibold text-foreground">
+            Announcements
+          </h2>
           <span className="bg-accent/10 text-accent text-xs px-2 py-0.5 rounded-full font-medium">
             2 new
           </span>
@@ -66,10 +74,12 @@ export function Announcements({ onViewAll }: AnnouncementsProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={onViewAll}
+            onClick={goToChat}
             className={cn(
               "group p-3 rounded-lg border transition-all hover:bg-secondary/50 cursor-pointer",
-              announcement.unread ? "bg-primary/5 border-primary/20" : "bg-card border-border"
+              announcement.unread
+                ? "bg-primary/5 border-primary/20"
+                : "bg-card border-border"
             )}
           >
             <div className="flex items-start gap-3">
@@ -78,10 +88,14 @@ export function Announcements({ onViewAll }: AnnouncementsProps) {
                   {announcement.pinned && (
                     <Pin className="w-3 h-3 text-accent flex-shrink-0" />
                   )}
-                  <h4 className={cn(
-                    "text-sm truncate",
-                    announcement.unread ? "font-semibold text-foreground" : "font-medium text-foreground"
-                  )}>
+                  <h4
+                    className={cn(
+                      "text-sm truncate",
+                      announcement.unread
+                        ? "font-semibold text-foreground"
+                        : "font-medium text-foreground"
+                    )}
+                  >
                     {announcement.title}
                   </h4>
                   {announcement.unread && (
@@ -92,9 +106,13 @@ export function Announcements({ onViewAll }: AnnouncementsProps) {
                   {announcement.preview}
                 </p>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-primary/70 font-medium">{announcement.course}</span>
+                  <span className="text-primary/70 font-medium">
+                    {announcement.course}
+                  </span>
                   <span className="text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">{announcement.date}</span>
+                  <span className="text-muted-foreground">
+                    {announcement.date}
+                  </span>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 mt-1" />
@@ -103,11 +121,11 @@ export function Announcements({ onViewAll }: AnnouncementsProps) {
         ))}
       </div>
 
-      <button 
-        onClick={onViewAll}
+      <button
+        onClick={goToChat}
         className="w-full mt-4 text-center text-sm text-primary hover:text-primary/80 font-medium transition-colors"
       >
-        View All Announcements →
+        Go to Chat & Discussion →
       </button>
     </div>
   );
