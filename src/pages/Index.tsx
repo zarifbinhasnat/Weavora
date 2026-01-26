@@ -140,7 +140,7 @@ export default function Index() {
             {/* Sidebar Content */}
             <div className="space-y-6">
               <UpcomingDeadlines />
-              <Announcements onViewAll={() => setActiveTab("announcements")} />
+              <Announcements />
             </div>
           </div>
         </div>

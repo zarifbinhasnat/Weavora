@@ -101,7 +101,7 @@ export default function TeacherDashboard() {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-display font-semibold text-foreground mb-6">Classroom Posts</h2>
-            <div>Posts section coming soon...</div>
+            <ClassroomPosts />
           </div>
         );
 
