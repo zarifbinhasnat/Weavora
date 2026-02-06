@@ -115,10 +115,35 @@ export default function DocumentsManager() {
     fetchDocs();
   };
 
+  // Convert Google Drive link to embeddable format
+  const getEmbeddableUrl = (url: string): string => {
+    // Google Drive: convert sharing link to preview link
+    if (url.includes('drive.google.com')) {
+      const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileIdMatch) {
+        return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+      }
+    }
+    
+    // OneDrive: convert sharing link to embed link
+    if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+      return url.replace('view.aspx', 'embed').replace('?', '?action=embedview&');
+    }
+    
+    // Return as-is for direct PDF links
+    return url;
+  };
+
+  const handlePreview = (url: string) => {
+    const embeddableUrl = getEmbeddableUrl(url);
+    setPreview(embeddableUrl);
+  };
+
   return (
     <div className="space-y-6">
       {/* Add */}
       <div className="border rounded-xl p-6 space-y-4 bg-card">
+        <h3 className="font-semibold text-lg">Add New Document</h3>
         <Input
           placeholder="Document title"
           value={title}
@@ -129,11 +154,16 @@ export default function DocumentsManager() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <Input
-          placeholder="PDF link (Google Drive / OneDrive)"
-          value={pdfUrl}
-          onChange={(e) => setPdfUrl(e.target.value)}
-        />
+        <div className="space-y-2">
+          <Input
+            placeholder="PDF link (Google Drive / OneDrive)"
+            value={pdfUrl}
+            onChange={(e) => setPdfUrl(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            💡 Tip: For Google Drive, share the file and paste the link (e.g., https://drive.google.com/file/d/FILE_ID/view)
+          </p>
+        </div>
         <Button onClick={addDocument} className="gap-2" disabled={isGenerating}>
           {isGenerating ? (
             <>
@@ -179,7 +209,7 @@ export default function DocumentsManager() {
             )}
 
             <div className="flex gap-2">
-              <Button size="sm" variant="secondary" onClick={() => setPreview(d.pdfUrl)}>
+              <Button size="sm" variant="secondary" onClick={() => handlePreview(d.pdfUrl)}>
                 <Eye className="w-4 h-4" /> Preview
               </Button>
               <Button size="sm" variant="destructive" onClick={() => removeDocument(d.id)}>
