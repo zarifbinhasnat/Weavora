@@ -3,7 +3,9 @@ import { db } from "./firebase"; // same pattern as users.ts
 import {
   addDoc,
   collection,
+  collectionGroup,
   doc,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -50,6 +52,13 @@ export async function createCourse(params: {
     joinedAt: serverTimestamp(),
   });
 
+  // Also write to user's enrolledCourses subcollection for easy listing
+  await setDoc(doc(db, "users", params.teacherUid, "enrolledCourses", courseRef.id), {
+    courseId: courseRef.id,
+    role: "teacher" as MemberRole,
+    joinedAt: serverTimestamp()
+  });
+
   return { courseId: courseRef.id, joinCode };
 }
 
@@ -71,7 +80,44 @@ export async function joinCourseByCode(params: { joinCode: string; uid: string }
     joinedAt: serverTimestamp(),
   });
 
+  // Also write to user's enrolledCourses subcollection
+  await setDoc(doc(db, "users", params.uid, "enrolledCourses", courseId), {
+    courseId: courseId,
+    role: "student" as MemberRole,
+    joinedAt: serverTimestamp()
+  });
+
   await updateDoc(doc(db, "courses", courseId), { updatedAt: serverTimestamp() });
 
   return { courseId };
+}
+
+// Fetch all courses a specific user is a member of
+export async function getUserCourses(uid: string) {
+  const courses = [];
+  try {
+    // 1. Get list of enrolled course IDs from user profile
+    const enrolledSnap = await getDocs(collection(db, "users", uid, "enrolledCourses"));
+
+    // 2. Fetch course details for each enrollment
+    // We use Promise.all to fetch them in parallel
+    const coursePromises = enrolledSnap.docs.map(async (enrolledDoc) => {
+      const courseId = enrolledDoc.id;
+      const courseSnap = await getDoc(doc(db, "courses", courseId));
+      if (courseSnap.exists()) {
+        return { id: courseSnap.id, ...courseSnap.data() };
+      }
+      return null;
+    });
+
+    const results = await Promise.all(coursePromises);
+
+    // Filter out nulls (deleted courses)
+    courses.push(...results.filter(c => c !== null));
+
+  } catch (error) {
+    console.error("Error fetching user courses:", error);
+    throw error;
+  }
+  return courses;
 }

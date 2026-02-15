@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  BookOpen, 
-  GraduationCap, 
-  Calendar, 
-  MessageSquare, 
-  FileText, 
+import {
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  MessageSquare,
+  FileText,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -35,8 +35,6 @@ const studentNavItems: NavItem[] = [
 const teacherNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
   { icon: BookOpen, label: "My Classes", id: "classes" },
-  { icon: FileText, label: "Documents", id: "documents" },
-  { icon: MessageSquare, label: "Posts", id: "posts" },
   { icon: Settings, label: "Copy Checker", id: "copy-checker" },
   { icon: Bell, label: "Notifications", id: "notifications", badge: 3 },
 ];
@@ -109,7 +107,7 @@ export function Sidebar({ activeTab, onTabChange, isTeacher = false }: SidebarPr
       {/* Footer */}
       <div className="p-3 border-t border-border space-y-1">
         <UserMenu collapsed={collapsed} />
-        
+
         <Button
           variant="nav-inactive"
           className={cn("w-full justify-start gap-3", collapsed && "justify-center px-0")}
@@ -117,7 +115,7 @@ export function Sidebar({ activeTab, onTabChange, isTeacher = false }: SidebarPr
           <Settings className="w-5 h-5 flex-shrink-0" />
           {!collapsed && <span>Settings</span>}
         </Button>
-        
+
         <Button
           variant="ghost"
           size="icon"

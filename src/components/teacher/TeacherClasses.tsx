@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Users, Calendar, Plus, Copy } from "lucide-react";
@@ -40,6 +41,7 @@ type ClassCard = {
 export function TeacherClasses({ limit, onCreateClass }: TeacherClassesProps) {
   const [classes, setClasses] = useState<ClassCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -135,6 +137,7 @@ export function TeacherClasses({ limit, onCreateClass }: TeacherClassesProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: (index + 1) * 0.05 }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            onClick={() => navigate(`/teacher/course/${classItem.id}`)}
             className="bg-card rounded-xl border border-border p-5 cursor-pointer shadow-card transition-all duration-300 hover:shadow-card-hover"
           >
             <div className="flex items-start justify-between mb-4">

@@ -3,10 +3,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage"; // Add this for file uploads
+import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
-// Using environment variables for security (see .env file)
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -15,6 +14,12 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+console.log("Firebase Config Loaded:", {
+  apiKey: firebaseConfig.apiKey ? "Present" : "Missing",
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain
+});
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

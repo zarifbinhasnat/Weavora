@@ -3,8 +3,9 @@ import { BookOpen, Clock, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface CourseCardProps {
+  id: string; // Add id for navigation
   title: string;
-  code: string;
+  code: string; // Keep code for display
   instructor: string;
   progress: number;
   nextClass?: string;
@@ -12,19 +13,20 @@ interface CourseCardProps {
   delay?: number;
 }
 
-export function CourseCard({ 
-  title, 
-  code, 
-  instructor, 
-  progress, 
-  nextClass, 
+export function CourseCard({
+  id,
+  title,
+  code,
+  instructor,
+  progress,
+  nextClass,
   students,
-  delay = 0 
+  delay = 0
 }: CourseCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/course/${code}`);
+    navigate(`/course/${id}`);
   };
 
   return (
@@ -38,7 +40,7 @@ export function CourseCard({
     >
       {/* Progress indicator */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-muted rounded-t-xl overflow-hidden">
-        <motion.div 
+        <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 1, delay: delay * 0.1 + 0.3 }}

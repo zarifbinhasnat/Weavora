@@ -11,6 +11,7 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import CoursePage from "./pages/CoursePage";
 import MaterialsPage from "./pages/MaterialsPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import TeacherCoursePage from "./pages/TeacherCoursePage"; // New import
 import NotFound from "./pages/NotFound";
 import ClassroomPosts from "./components/teacher/ClassroomPosts";
 import ChatPage from "./components/teacher/ChatPage";
@@ -106,6 +107,16 @@ function AppRoutes() {
         }
       />
 
+      {/* Teacher Course Management Route */}
+      <Route
+        path="/teacher/course/:courseCode"
+        element={
+          <ProtectedRoute>
+            <TeacherCoursePage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -118,7 +129,12 @@ function App() {
         <TooltipProvider>
           <Sonner />
           <Toaster />
-          <BrowserRouter>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <AppRoutes />
           </BrowserRouter>
         </TooltipProvider>
