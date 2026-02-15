@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Sidebar } from "@/components/layout/Sidebar";
-import DocumentsManager from "@/components/teacher/DocumentsManager";
+
 import { Search, User, Bell } from "lucide-react";
 
 // Import components properly
@@ -13,7 +13,7 @@ import { TeacherStats as TeacherStatsComponent } from "@/components/teacher/Teac
 import { DocumentUpload } from "@/components/teacher/DocumentUpload";
 import { CreateClassModal } from "@/components/teacher/CreateClassModal";
 import { CopyChecker } from "@/components/teacher/CopyChecker";
-import ClassroomPosts from "@/components/teacher/ClassroomPosts";
+
 
 
 // Wrapper components with error handling
@@ -78,36 +78,17 @@ export default function TeacherDashboard() {
             <TeacherClasses onCreateClass={() => setShowCreateClass(true)} />
           </div>
         );
-      
-      case "documents":
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-display font-semibold mb-6">
-        Document Management
-      </h2>
-      <DocumentsManager />
-    </div>
-  );
 
-      
+
+
+
       case "copy-checker":
         return (
           <div className="p-6">
             <h2 className="text-2xl font-display font-semibold text-foreground mb-6">AI Copy Checker</h2>
-            <div>Copy checker coming soon...</div>
+            <CopyChecker />
           </div>
         );
-      
-  case "posts":
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-display font-semibold text-foreground mb-6">
-        Classroom Posts
-      </h2>
-      <ClassroomPosts />
-    </div>
-  );
-
 
       default:
         return (
@@ -116,7 +97,7 @@ export default function TeacherDashboard() {
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b">
               <div className="px-6 py-4 flex items-center justify-between">
                 <div>
-                  <motion.h1 
+                  <motion.h1
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-2xl font-display font-semibold text-foreground"
@@ -125,7 +106,7 @@ export default function TeacherDashboard() {
                   </motion.h1>
                   <p className="text-sm text-muted-foreground">Manage your classes, verify AI summaries, and engage with students.</p>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -135,7 +116,7 @@ export default function TeacherDashboard() {
                       className="w-64 pl-10 pr-4 py-2 bg-secondary/50 border-0 rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={() => setActiveTab("notifications")}
                     className="relative w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
                   >
@@ -162,7 +143,7 @@ export default function TeacherDashboard() {
 
               {/* Quick Actions */}
               <section className="mb-8">
-                <QuickActions 
+                <QuickActions
                   onCreateClass={() => setShowCreateClass(true)}
                   onUploadDocument={() => setShowUploadDoc(true)}
                   onCheckCopy={() => setShowCopyChecker(true)}
@@ -176,7 +157,7 @@ export default function TeacherDashboard() {
                   <section>
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-display font-semibold text-foreground">Your Classes</h2>
-                      <button 
+                      <button
                         onClick={() => setActiveTab("classes")}
                         className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
                       >
@@ -207,7 +188,7 @@ export default function TeacherDashboard() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} isTeacher={true} />
-      
+
       <main className="flex-1 overflow-y-auto">
         {renderContent()}
       </main>

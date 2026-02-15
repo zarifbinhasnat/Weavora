@@ -11,9 +11,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { answerWithRAG } from "@/components/backend/embeddings";
+import { getAllRecentAnnouncements } from "@/components/backend/announcements";
+import { answerWithRAG, askPlanner } from "@/components/backend/embeddings";
 
-type AIMode = "tutor" | "summarizer" | "evaluator" | "planner";
+type AIMode = "tutor" | "planner";
 
 interface Message {
   id: string;
@@ -28,11 +29,9 @@ const modes: {
   icon: React.ElementType;
   description: string;
 }[] = [
-  { id: "tutor", label: "Tutor", icon: MessageSquare, description: "Ask questions from uploaded course materials" },
-  { id: "summarizer", label: "Summarizer", icon: FileText, description: "Summarize uploaded notes or PDFs" },
-  { id: "evaluator", label: "Evaluator", icon: CheckCircle, description: "Evaluate answers using course content" },
-  { id: "planner", label: "Planner", icon: CalendarDays, description: "Plan studies based on syllabus" },
-];
+    { id: "tutor", label: "Tutor", icon: MessageSquare, description: "Ask questions from all your course materials" },
+    { id: "planner", label: "Planner", icon: CalendarDays, description: "Plan studies based on announcements" },
+  ];
 
 export function AIAssistant() {
   const [activeMode, setActiveMode] = useState<AIMode>("tutor");
@@ -44,7 +43,7 @@ export function AIAssistant() {
       id: "init",
       role: "assistant",
       content:
-        "Hello! I'm your AI learning assistant. I answer strictly from your uploaded course materials. Ask me anything.",
+        "Hello! I'm your AI learning assistant. I can answer questions from your course materials or help you plan your studies. What would you like to do?",
       mode: "tutor",
     },
   ]);
@@ -52,13 +51,9 @@ export function AIAssistant() {
   const getInitialMessage = (mode: AIMode): string => {
     switch (mode) {
       case "tutor":
-        return "Hello! I'm your AI tutor. Ask me any question about your course materials.";
-      case "summarizer":
-        return "Hi! I can summarize your notes and PDFs. Share what you'd like me to summarize.";
-      case "evaluator":
-        return "Hello! I can evaluate your answers based on course content. Share your answer to get feedback.";
+        return "Hello! I'm your AI tutor. Ask me any question, and I'll search your course materials.";
       case "planner":
-        return "Hi! I can help you plan your studies based on deadlines, syllabus, and your progress. Ask me to generate a study schedule, suggest priorities, or track your goals.";
+        return "Hi! I can help you plan your studies based on recent announcements. How can I help you organize your time?";
       default:
         return "Hello! How can I assist you today?";
     }
@@ -78,11 +73,9 @@ export function AIAssistant() {
     setLoading(true);
 
     try {
-      const courseId = "CS4501"; // TODO: Get from context/route
-
-      // Use RAG system for tutor mode
       if (activeMode === "tutor") {
-        const answer = await answerWithRAG(courseId, input);
+        // Use RAG system for tutor mode with "ALL" courses scope
+        const answer = await answerWithRAG("ALL", input);
 
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -92,36 +85,15 @@ export function AIAssistant() {
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
-      } else {
-        // For other modes, use external API (if available)
-        let endpoint = "http://localhost:3001/api/ask";
-        let requestBody: any = {
-          question: input,
-          course: "statistics",
-        };
-
-        if (activeMode === "planner") {
-          endpoint = "http://localhost:3001/api/schedule/generate";
-          requestBody = {
-            prompt: input,
-            userId: "current-user-id",
-          };
-        }
-
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        const data = await res.json();
+      } else if (activeMode === "planner") {
+        // Planner mode: fetch announcements first
+        const announcements = await getAllRecentAnnouncements();
+        const plan = await askPlanner(input, announcements);
 
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: data.answer || data.schedule || data.response || "No answer found.",
+          content: plan,
           mode: activeMode,
         };
 
@@ -134,7 +106,7 @@ export function AIAssistant() {
         {
           id: "error",
           role: "assistant",
-          content: "❌ Failed to get response. Please make sure course materials are uploaded.",
+          content: "❌ Failed to get response. Please try again.",
         },
       ]);
     } finally {

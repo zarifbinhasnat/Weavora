@@ -6,7 +6,44 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  collectionGroup,
+  getDocs,
+  limit,
+  where,
 } from "firebase/firestore";
+
+// ... (existing code)
+
+export async function getAllRecentAnnouncements(): Promise<CourseAnnouncement[]> {
+  try {
+    // Teacher creates posts in the "classroomPosts" collection with type="announcement"
+    // We query that collection directly — no collection group index needed
+    const q = query(
+      collection(db, "classroomPosts"),
+      where("type", "==", "announcement"),
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+
+    const snap = await getDocs(q);
+    console.log(`📋 getAllRecentAnnouncements: found ${snap.docs.length} docs`);
+
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        title: data.title ?? "",
+        text: data.content ?? data.text ?? "",
+        authorName: data.author ?? data.authorName ?? "",
+        pinned: Boolean(data.pinned),
+        createdAt: data.createdAt,
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching all announcements:", error);
+    return [];
+  }
+}
 
 export type CourseAnnouncement = {
   id: string;

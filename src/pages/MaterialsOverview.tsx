@@ -1,46 +1,102 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { FileText, BookOpen } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { FileText, BookOpen, Loader2 } from "lucide-react";
+import { auth, db } from "@/components/backend/firebase";
+import { getUserCourses } from "@/components/backend/courses";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 interface CourseWithMaterials {
   title: string;
   code: string;
   instructor: string;
   materialCount: number;
+  courseId: string;
 }
-
-// Mock data - replace with real data from Firebase
-const coursesWithMaterials: CourseWithMaterials[] = [
-  {
-    title: "Machine Learning Fundamentals",
-    code: "CS 4501",
-    instructor: "Dr. Sarah Chen",
-    materialCount: 12,
-  },
-  {
-    title: "Data Ethics & Society",
-    code: "PHIL 3200",
-    instructor: "Prof. Michael Torres",
-    materialCount: 8,
-  },
-  {
-    title: "Statistical Analysis",
-    code: "STAT 3100",
-    instructor: "Dr. Emily Watson",
-    materialCount: 15,
-  },
-  {
-    title: "AI Fundamentals",
-    code: "CS 3501",
-    instructor: "Dr. James Liu",
-    materialCount: 10,
-  },
-];
 
 export function MaterialsOverview() {
   const navigate = useNavigate();
+  const [courses, setCourses] = useState<CourseWithMaterials[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCoursesWithMaterials() {
+      const user = auth.currentUser;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // 1. Get all courses the student is enrolled in
+        const enrolledCourses = await getUserCourses(user.uid);
+
+        // 2. For each course, count documents in the Documents collection
+        const coursesWithCounts = await Promise.all(
+          enrolledCourses.map(async (course: any) => {
+            const courseId = course.courseCode || course.id;
+
+            // Count documents for this course
+            let materialCount = 0;
+            try {
+              const q = query(
+                collection(db, "Documents"),
+                where("courseId", "==", courseId)
+              );
+              const snap = await getDocs(q);
+              materialCount = snap.size;
+            } catch {
+              materialCount = 0;
+            }
+
+            return {
+              title: course.name || course.title || "Untitled Course",
+              code: course.courseCode || course.id,
+              instructor: course.teacherName || "Instructor",
+              materialCount,
+              courseId: courseId,
+            };
+          })
+        );
+
+        setCourses(coursesWithCounts);
+      } catch (error) {
+        console.error("Error loading courses with materials:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCoursesWithMaterials();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <div className="space-y-6">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="text-2xl font-display font-semibold text-foreground">
+            Course Materials
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Access all your course materials in one place
+          </p>
+        </motion.div>
+        <div className="text-center py-12 border rounded-xl border-dashed bg-secondary/20">
+          <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+          <p className="text-muted-foreground">No courses found. Join a course to see materials.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -57,9 +113,9 @@ export function MaterialsOverview() {
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {coursesWithMaterials.map((course, index) => (
+        {courses.map((course, index) => (
           <motion.div
-            key={course.code}
+            key={course.courseId}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -97,7 +153,7 @@ export function MaterialsOverview() {
                     <div className="flex items-center gap-1.5">
                       <FileText className="w-4 h-4 text-primary" />
                       <span className="font-medium text-foreground">
-                        {course.materialCount} files
+                        {course.materialCount} {course.materialCount === 1 ? "file" : "files"}
                       </span>
                     </div>
                   </div>

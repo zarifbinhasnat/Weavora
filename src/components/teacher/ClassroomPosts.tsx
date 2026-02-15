@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   createPost,
   deletePost,
@@ -10,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 type PostType = "announcement" | "discussion";
 
@@ -18,10 +20,21 @@ type ClassroomPost = {
   title: string;
   content: string;
   author?: string;
+  courseId: string;
+  type: PostType;
   createdAt?: any;
 };
 
-export default function ClassroomPosts() {
+interface ClassroomPostsProps {
+  courseId?: string;
+  userRole?: "teacher" | "student";
+}
+
+export default function ClassroomPosts({ courseId: propCourseId, userRole = "teacher" }: ClassroomPostsProps) {
+  const params = useParams();
+  const courseId = propCourseId || params.courseCode || "";
+  const { user } = useAuth();
+
   // Form state
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -38,15 +51,17 @@ export default function ClassroomPosts() {
 
     try {
       unsubAnnouncements = listenToPosts(
+        courseId,
         "announcement",
-        (data: ClassroomPost[]) => {
+        (data: any[]) => {
           setAnnouncements(data || []);
         }
       );
 
       unsubDiscussions = listenToPosts(
+        courseId,
         "discussion",
-        (data: ClassroomPost[]) => {
+        (data: any[]) => {
           setDiscussions(data || []);
         }
       );
@@ -58,14 +73,23 @@ export default function ClassroomPosts() {
       unsubAnnouncements?.();
       unsubDiscussions?.();
     };
-  }, []);
+  }, [courseId]);
 
   // ➕ Create post
   const handleAddPost = async () => {
     if (!title.trim() || !content.trim()) return;
 
     try {
-      await createPost(title, content, "Teacher", type);
+      // Students can only create discussions
+      const postType = userRole === "student" ? "discussion" : type;
+
+      await createPost(
+        title,
+        content,
+        user?.displayName || user?.email || "Unknown",
+        postType,
+        courseId
+      );
       setTitle("");
       setContent("");
     } catch (err) {
@@ -95,14 +119,18 @@ export default function ClassroomPosts() {
           />
 
           <div className="flex items-center gap-3">
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as PostType)}
-              className="border rounded px-3 py-2 text-sm"
-            >
-              <option value="discussion">💬 Discussion</option>
-              <option value="announcement">📌 Announcement</option>
-            </select>
+            {userRole === "teacher" ? (
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as PostType)}
+                className="border rounded px-3 py-2 text-sm"
+              >
+                <option value="discussion">💬 Discussion</option>
+                <option value="announcement">📌 Announcement</option>
+              </select>
+            ) : (
+              <Badge variant="secondary">Discussion</Badge>
+            )}
 
             <Button onClick={handleAddPost}>Publish</Button>
           </div>
@@ -134,15 +162,20 @@ export default function ClassroomPosts() {
                   <p className="text-sm text-muted-foreground mt-1">
                     {p.content}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Posted by {p.author || "Teacher"}
+                  </p>
                 </div>
 
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deletePost(p.id)}
-                >
-                  Delete
-                </Button>
+                {userRole === "teacher" && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deletePost(p.id)}
+                  >
+                    Delete
+                  </Button>
+                )}
               </div>
             </div>
           ))}
@@ -171,16 +204,22 @@ export default function ClassroomPosts() {
                   <p className="text-sm text-muted-foreground mt-1">
                     {p.content}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Posted by {p.author}
+                  </p>
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-500"
-                  onClick={() => deletePost(p.id)}
-                >
-                  Delete
-                </Button>
+                {/* Only authors or teachers can delete? For now just teacher */}
+                {(userRole === "teacher" || (user && user.displayName === p.author)) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500"
+                    onClick={() => deletePost(p.id)}
+                  >
+                    Delete
+                  </Button>
+                )}
               </div>
             </div>
           ))}

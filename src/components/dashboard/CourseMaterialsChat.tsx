@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { answerWithRAG } from "@/components/backend/embeddings";
 
 interface Message {
   id: string;
@@ -44,24 +45,12 @@ export function CourseMaterialsChat({ courseCode, courseName }: CourseMaterialsC
     setLoading(true);
 
     try {
-      // TODO: Replace with actual RAG API call
-      // const response = await fetch('http://localhost:3001/api/ask', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     question: userMessage.content,
-      //     courseName: courseCode
-      //   })
-      // });
-      // const data = await response.json();
-
-      // Simulate API call for now
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await answerWithRAG(courseCode, userMessage.content);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `This is a simulated response for "${userMessage.content}". In the real implementation, this will query the RAG system with course materials AND past papers for ${courseCode} to provide comprehensive answers grounded in both lecture content and exam patterns.`,
+        content: response,
         timestamp: new Date(),
       };
 
@@ -71,7 +60,7 @@ export function CourseMaterialsChat({ courseCode, courseName }: CourseMaterialsC
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
+        content: "Sorry, I encountered an error retrieving course info.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -105,28 +94,26 @@ export function CourseMaterialsChat({ courseCode, courseName }: CourseMaterialsC
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className={`flex gap-3 ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 {message.role === "assistant" && (
                   <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                     <Bot className="w-4 h-4 text-primary-foreground" />
                   </div>
                 )}
-                
+
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground"
-                  }`}
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                    }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   <span className="text-xs opacity-70 mt-1 block">
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
                     })}
                   </span>
                 </div>

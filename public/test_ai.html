@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Key Diagnostic</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        h1 { color: #333; }
+        #status { font-weight: bold; margin-bottom: 10px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #333; color: #0f0; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Gemini API Diagnostic</h1>
+        <p>Testing API Key ending in: <strong>...efBE</strong></p>
+        <div id="status">Running tests...</div>
+        <pre id="output">Waiting...</pre>
+        <button onclick="runTest()">Run Test Again</button>
+    </div>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+        const API_KEY = "AIzaSyBSFgrPfjG0VFT9_CbBAZDB_JGVl41efBE";
+
+        async function runTest() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            
+            function log(msg) {
+                output.textContent += msg + "\n";
+                console.log(msg);
+            }
+
+            output.textContent = "Initializing...\n";
+            status.textContent = "Testing...";
+            status.className = "";
+
+            try {
+                // 1. REST API Test (List Models)
+                log("--- Test 1: Listing Models (REST) ---");
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
+                const data = await resp.json();
+                
+                if (!resp.ok) {
+                    throw new Error(`REST Error ${resp.status}: ${JSON.stringify(data)}`);
+                }
+                
+                log(`✅ REST API Success! Found ${data.models ? data.models.length : 0} models.`);
+                if (data.models) {
+                    log("Available models:");
+                    data.models.forEach(m => log(` - ${m.name}`));
+                }
+
+                // 2. SDK Generation Test
+                log("\n--- Test 2: Generation (SDK) ---");
+                const genAI = new GoogleGenerativeAI(API_KEY);
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                
+                log("Sending prompt to gemini-1.5-flash...");
+                const result = await model.generateContent("Hello, strictly respond with 'OK'.");
+                const response = await result.response;
+                const text = response.text();
+                
+                log(`✅ SDK Success! Response: "${text}"`);
+                
+                status.textContent = "✅ SYSTEM OPERATIONAL";
+                status.className = "success";
+
+            } catch (error) {
+                log(`\n❌ FAILED: ${error.message}`);
+                status.textContent = "❌ DIAGNOSTIC FAILED";
+                status.className = "error";
+            }
+        }
+
+        window.runTest = runTest;
+        // Auto-run
+        runTest();
+    </script>
+</body>
+</html>
