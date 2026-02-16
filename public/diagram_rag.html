@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background: #1a1a2e;
+            margin: 40px;
+            font-family: sans-serif;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+
+<body>
+    <pre class="mermaid">
+sequenceDiagram
+    participant Student
+    participant UI as DocumentsManager
+    participant Embed as embeddings.ts
+    participant Gemini as Gemini API
+    participant FBS as Firebase Storage
+    participant FFS as Firestore
+
+    Student->>UI: Uploads PDF
+    UI->>FBS: Upload PDF file
+    FBS-->>UI: Download URL
+    UI->>FFS: Save document metadata
+    UI->>Embed: generateEmbeddingsFromLink(file)
+    Embed->>Embed: readFileAsArrayBuffer(file)
+    Embed->>Gemini: Extract text (gemini-2.0-flash + PDF bytes)
+    Gemini-->>Embed: Plain text
+    Embed->>Embed: splitIntoChunks(text, 500 words)
+    loop Each chunk
+        Embed->>Gemini: embedContent (gemini-embedding-001)
+        Gemini-->>Embed: 768-dim vector
+    end
+    Embed->>FBS: Store embeddings JSON
+    Embed->>FFS: Update doc status to completed
+</pre>
+</body>
+
+</html>

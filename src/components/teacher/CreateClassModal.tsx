@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { createCourse } from "../backend/courses";
 import { auth } from "../backend/firebase";
 
@@ -13,40 +13,48 @@ export function CreateClassModal({ onClose }: CreateClassModalProps) {
   const [formData, setFormData] = useState({
     name: "",
     code: "",
+    session: "",
     subject: "",
     description: "",
   });
+  const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-  const user = auth.currentUser;
-  if (!user) {
-    alert("Please login first.");
-    return;
-  }
+    const user = auth.currentUser;
+    if (!user) {
+      setError("Please login first.");
+      return;
+    }
 
-  try {
-    const res = await createCourse({
-  name: formData.name,
-  description: formData.description,
-  subject: formData.subject,
-  courseCode: formData.code,
-  teacherUid: user.uid,
-  teacherName: user.email ?? "",
-});
+    setCreating(true);
 
+    try {
+      const res = await createCourse({
+        name: formData.name,
+        description: formData.description,
+        subject: formData.subject,
+        courseCode: formData.code,
+        session: formData.session,
+        teacherUid: user.uid,
+        teacherName: user.email ?? "",
+      });
 
-    alert(`Class created!\nJoin code: ${res.joinCode}`);
-    console.log("Created course:", res);
+      alert(`Class created!\nJoin code: ${res.joinCode}`);
+      console.log("Created course:", res);
 
-    onClose();
-  } catch (err: unknown) {
-    console.error(err);
-    const errorMessage = err instanceof Error ? err.message : "Failed to create class";
-    alert(errorMessage);
-  }
-};
+      onClose();
+    } catch (err: unknown) {
+      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to create class";
+      setError(errorMessage);
+    } finally {
+      setCreating(false);
+    }
+  };
 
 
   return (
@@ -71,6 +79,12 @@ export function CreateClassModal({ onClose }: CreateClassModalProps) {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">Class Name</label>
@@ -84,16 +98,30 @@ export function CreateClassModal({ onClose }: CreateClassModalProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Class Code</label>
-            <input
-              type="text"
-              required
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-              className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              placeholder="e.g., CS 4501"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Class Code</label>
+              <input
+                type="text"
+                required
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="e.g., CS 4501"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Session</label>
+              <input
+                type="text"
+                required
+                value={formData.session}
+                onChange={(e) => setFormData({ ...formData, session: e.target.value })}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="e.g., Fall 2025"
+              />
+            </div>
           </div>
 
           <div>
@@ -129,9 +157,16 @@ export function CreateClassModal({ onClose }: CreateClassModalProps) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              disabled={creating}
+              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              Create Class
+              {creating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Creating...
+                </>
+              ) : (
+                "Create Class"
+              )}
             </button>
           </div>
         </form>
