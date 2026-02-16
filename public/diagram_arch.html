@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background: #1a1a2e;
+            margin: 40px;
+            font-family: sans-serif;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+
+<body>
+    <pre class="mermaid">
+graph TB
+    subgraph Frontend["Frontend - React + Vite"]
+        UI["Student Dashboard / Teacher Dashboard"]
+        AI["AI Assistant and Planner"]
+    end
+    subgraph Backend["Backend - Firebase"]
+        Auth["Firebase Auth"]
+        FS["Cloud Firestore"]
+        Storage["Firebase Storage"]
+    end
+    subgraph GeminiAPI["Google Gemini API"]
+        Flash["gemini-2.0-flash Chat and PDF Extraction"]
+        Embed["gemini-embedding-001 Embeddings"]
+    end
+    UI -->|Auth| Auth
+    UI -->|Data| FS
+    UI -->|Files| Storage
+    AI -->|RAG Query| Flash
+    AI -->|Vectors| Embed
+    Storage -->|PDF bytes| Flash
+</pre>
+</body>
+
+</html>

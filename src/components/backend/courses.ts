@@ -29,16 +29,52 @@ export async function createCourse(params: {
   description?: string;
   subject?: string;
   courseCode?: string;
+  session?: string;
   teacherUid: string;
   teacherName?: string;
 }) {
   const joinCode = makeJoinCode(6);
+  const trimmedCode = (params.courseCode ?? "").trim();
+  const trimmedName = params.name.trim();
+  const trimmedSession = (params.session ?? "").trim();
+
+  // --- Collision checks ---
+
+  // 1. Check if a course with the same courseCode already exists
+  if (trimmedCode) {
+    const codeQuery = query(
+      collection(db, "courses"),
+      where("courseCode", "==", trimmedCode),
+      limit(1)
+    );
+    const codeSnap = await getDocs(codeQuery);
+    if (!codeSnap.empty) {
+      throw new Error(`A course with code "${trimmedCode}" already exists.`);
+    }
+  }
+
+  // 2. Check if a course with the same name AND session already exists
+  if (trimmedName && trimmedSession) {
+    const nameQuery = query(
+      collection(db, "courses"),
+      where("name", "==", trimmedName),
+      where("session", "==", trimmedSession),
+      limit(1)
+    );
+    const nameSnap = await getDocs(nameQuery);
+    if (!nameSnap.empty) {
+      throw new Error(`A course named "${trimmedName}" already exists for session "${trimmedSession}".`);
+    }
+  }
+
+  // --- Create the course ---
 
   const courseRef = await addDoc(collection(db, "courses"), {
-    name: params.name.trim(),
+    name: trimmedName,
     description: (params.description ?? "").trim(),
     subject: (params.subject ?? "").trim(),
-    courseCode: (params.courseCode ?? "").trim(),
+    courseCode: trimmedCode,
+    session: trimmedSession,
     teacherId: params.teacherUid,
     teacherName: params.teacherName ?? "",
     joinCode,

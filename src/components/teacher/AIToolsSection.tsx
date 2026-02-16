@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 
 interface AIToolsSectionProps {
   onCheckCopy: () => void;
+  onOpenGrading?: () => void;
 }
 
-export function AIToolsSection({ onCheckCopy }: AIToolsSectionProps) {
+export function AIToolsSection({ onCheckCopy, onOpenGrading }: AIToolsSectionProps) {
   const aiTools = [
     {
       title: "AI Grading Assistant",
@@ -60,7 +61,15 @@ export function AIToolsSection({ onCheckCopy }: AIToolsSectionProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full" variant="default">
+                  <Button
+                    className="w-full"
+                    variant="default"
+                    onClick={() => {
+                      if (tool.title === "AI Grading Assistant" && onOpenGrading) {
+                        onOpenGrading();
+                      }
+                    }}
+                  >
                     Open Tool
                   </Button>
                 </CardContent>

@@ -13,6 +13,7 @@ import { TeacherStats as TeacherStatsComponent } from "@/components/teacher/Teac
 import { DocumentUpload } from "@/components/teacher/DocumentUpload";
 import { CreateClassModal } from "@/components/teacher/CreateClassModal";
 import { CopyChecker } from "@/components/teacher/CopyChecker";
+import { AIGradingPage } from "@/pages/AIGradingPage";
 
 
 
@@ -35,9 +36,9 @@ const QuickActions = ({ onCreateClass, onUploadDocument, onCheckCopy }: { onCrea
   }
 };
 
-const AIToolsSection = ({ onCheckCopy }: { onCheckCopy: () => void }) => {
+const AIToolsSection = ({ onCheckCopy, onOpenGrading }: { onCheckCopy: () => void; onOpenGrading: () => void }) => {
   try {
-    return <AIToolsSectionComponent onCheckCopy={onCheckCopy} />;
+    return <AIToolsSectionComponent onCheckCopy={onCheckCopy} onOpenGrading={onOpenGrading} />;
   } catch (e) {
     console.error("Error loading AIToolsSection:", e);
     return <div>Error loading AI tools</div>;
@@ -87,6 +88,13 @@ export default function TeacherDashboard() {
           <div className="p-6">
             <h2 className="text-2xl font-display font-semibold text-foreground mb-6">AI Copy Checker</h2>
             <CopyChecker />
+          </div>
+        );
+
+      case "ai-grading":
+        return (
+          <div className="p-6">
+            <AIGradingPage />
           </div>
         );
 
@@ -170,7 +178,7 @@ export default function TeacherDashboard() {
                   {/* AI Tools */}
                   <section>
                     <h2 className="text-lg font-display font-semibold text-foreground mb-4">AI-Powered Tools</h2>
-                    <AIToolsSection onCheckCopy={() => setShowCopyChecker(true)} />
+                    <AIToolsSection onCheckCopy={() => setShowCopyChecker(true)} onOpenGrading={() => setActiveTab("ai-grading")} />
                   </section>
                 </div>
 

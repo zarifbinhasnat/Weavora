@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background: #1a1a2e;
+            margin: 40px;
+            font-family: sans-serif;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+
+<body>
+    <pre class="mermaid">
+sequenceDiagram
+    participant Student
+    participant Chat as AIAssistant.tsx
+    participant RAG as embeddings.ts
+    participant Gemini as Gemini API
+
+    Student->>Chat: What is backpropagation?
+    Chat->>RAG: answerWithRAG(courseId, question)
+    RAG->>RAG: queryRAG(courseId, question, topK=5)
+    Note over RAG: 1. Embed the question
+    RAG->>Gemini: embedContent(question)
+    Gemini-->>RAG: query vector
+    Note over RAG: 2. Load stored embeddings
+    RAG->>RAG: getCourseEmbeddings(courseId)
+    Note over RAG: 3. Cosine similarity ranking
+    RAG->>RAG: Sort chunks by similarity score
+    Note over RAG: 4. Build prompt with top-5 chunks
+    RAG->>Gemini: generateContent(prompt + context)
+    Gemini-->>RAG: Contextual answer
+    RAG-->>Chat: Answer
+    Chat-->>Student: Display answer
+</pre>
+</body>
+
+</html>
