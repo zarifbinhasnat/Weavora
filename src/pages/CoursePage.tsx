@@ -23,6 +23,12 @@ export default function CoursePage() {
     const fetchCourse = async () => {
       if (!courseCode) return;
       try {
+        if (!db) {
+          console.warn("Firestore not initialized — cannot fetch course data");
+          setLoading(false);
+          setCourseData(null);
+          return;
+        }
         const docRef = doc(db, "courses", courseCode);
         const snap = await getDoc(docRef);
         if (snap.exists()) {

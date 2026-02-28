@@ -51,8 +51,14 @@ export default function DocumentsManager({ courseId, readOnly = false }: Documen
       setIsLoading(false);
       return;
     }
-
     setIsLoading(true);
+    if (!db) {
+      console.warn("Firestore not initialized — DocumentsManager cannot fetch docs.");
+      setDocs([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const q = query(collection(db, "Documents"), where("courseId", "==", courseId));
       const snap = await getDocs(q);
@@ -105,6 +111,11 @@ export default function DocumentsManager({ courseId, readOnly = false }: Documen
 
       // Handle File Upload
       if (file) {
+        if (!storage) {
+          toast({ title: "Storage not configured — cannot upload file", variant: "destructive" });
+          setIsGenerating(false);
+          return;
+        }
         // Use courseId in path to organize files
         const fileRef = ref(storage, `course-materials/${courseId}/${Date.now()}_${file.name}`);
         const snapshot = await uploadBytes(fileRef, file);
@@ -112,6 +123,12 @@ export default function DocumentsManager({ courseId, readOnly = false }: Documen
       }
 
       // 1. Add document to Firestore
+      if (!db) {
+        toast({ title: "Firestore not configured — cannot add document", variant: "destructive" });
+        setIsGenerating(false);
+        return;
+      }
+
       const docRef = await addDoc(collection(db, "Documents"), {
         title,
         description,
@@ -171,6 +188,11 @@ export default function DocumentsManager({ courseId, readOnly = false }: Documen
   const removeDocument = async (id: string) => {
     if (readOnly) return;
     try {
+      if (!db) {
+        toast({ title: "Firestore not configured — cannot delete document", variant: "destructive" });
+        return;
+      }
+
       await deleteDoc(doc(db, "Documents", id));
       fetchDocs();
       toast({ title: "Document removed" });

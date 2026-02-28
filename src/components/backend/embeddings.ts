@@ -1,9 +1,8 @@
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db } from "./firebase.js";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db as firebaseDb, storage as firebaseStorage } from "./firebase.js";
 import { addDoc, collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const storage = getStorage();
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 console.log("Gemini API Key Check:", apiKey ? `Present (ends with ...${apiKey.slice(-4)})` : "Missing");
 const genAI = new GoogleGenerativeAI(apiKey || "dummy");
@@ -188,8 +187,13 @@ export async function generateEmbeddingsFromLink(
       type: "application/json",
     });
 
+    if (!firebaseStorage) {
+      console.warn("Firebase Storage not initialized — skipping embeddings upload.");
+      throw new Error("Firebase Storage not initialized");
+    }
+
     const storageRef = ref(
-      storage,
+      firebaseStorage,
       `embeddings/${courseId}/${documentId}.json`
     );
     await uploadBytes(storageRef, blob);
@@ -198,7 +202,8 @@ export async function generateEmbeddingsFromLink(
     console.log("📦 Embeddings stored in Firebase Storage");
 
     // 6. Store metadata in Firestore
-    await addDoc(collection(db, "embeddingMetadata"), {
+    if (firebaseDb) {
+      await addDoc(collection(firebaseDb, "embeddingMetadata"), {
       courseId,
       documentId,
       documentTitle,
@@ -206,16 +211,23 @@ export async function generateEmbeddingsFromLink(
       chunkCount: embeddingChunks.length,
       status: "completed",
       createdAt: new Date(),
-    });
+      });
+    } else {
+      console.warn("Firestore not initialized — skipping metadata save.");
+    }
 
     console.log("💾 Embedding metadata saved to Firestore");
 
     // 7. Update document to mark embeddings as generated
-    const docRef = doc(db, "Documents", documentId);
-    await updateDoc(docRef, {
+    if (firebaseDb) {
+      const docRef = doc(firebaseDb, "Documents", documentId);
+      await updateDoc(docRef, {
       embeddingsGenerated: true,
       embeddingsGeneratedAt: new Date(),
-    });
+      });
+    } else {
+      console.warn("Firestore not initialized — skipping document update.");
+    }
 
     console.log("✅ Embedding generation complete for:", documentTitle);
 
@@ -224,14 +236,18 @@ export async function generateEmbeddingsFromLink(
 
     // Store error in metadata
     try {
-      await addDoc(collection(db, "embeddingMetadata"), {
-        courseId,
-        documentId,
-        documentTitle,
-        status: "failed",
-        error: error instanceof Error ? error.message : "Unknown error",
-        createdAt: new Date(),
-      });
+      if (firebaseDb) {
+        await addDoc(collection(firebaseDb, "embeddingMetadata"), {
+          courseId,
+          documentId,
+          documentTitle,
+          status: "failed",
+          error: error instanceof Error ? error.message : "Unknown error",
+          createdAt: new Date(),
+        });
+      } else {
+        console.warn("Firestore not initialized — skipping error metadata save.");
+      }
     } catch (metaError) {
       console.error("Failed to save error metadata:", metaError);
     }
@@ -260,15 +276,20 @@ export async function getCourseEmbeddings(
   courseId: string
 ): Promise<EmbeddingChunk[]> {
   let q;
+  // If Firestore isn't initialized, return empty list instead of throwing
+  if (!firebaseDb) {
+    console.warn("Firestore not initialized — getCourseEmbeddings returning empty list.");
+    return [];
+  }
 
   if (courseId === "ALL") {
     q = query(
-      collection(db, "embeddingMetadata"),
+      collection(firebaseDb, "embeddingMetadata"),
       where("status", "==", "completed")
     );
   } else {
     q = query(
-      collection(db, "embeddingMetadata"),
+      collection(firebaseDb, "embeddingMetadata"),
       where("courseId", "==", courseId),
       where("status", "==", "completed")
     );
@@ -475,9 +496,14 @@ export async function checkEmbeddingsExist(
   courseId: string,
   documentId: string
 ): Promise<boolean> {
+  if (!firebaseDb) {
+    console.warn("Firestore not initialized — cannot check embeddings existence.");
+    return false;
+  }
+
   const snap = await getDocs(
     query(
-      collection(db, "embeddingMetadata"),
+      collection(firebaseDb, "embeddingMetadata"),
       where("courseId", "==", courseId),
       where("documentId", "==", documentId),
       where("status", "==", "completed")

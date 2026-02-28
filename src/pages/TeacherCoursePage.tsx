@@ -28,6 +28,16 @@ export default function TeacherCoursePage() {
         const fetchCourse = async () => {
             if (!courseCode) return;
             try {
+                if (!db) {
+                    console.warn("Firestore not initialized — cannot fetch teacher course data");
+                    setCourseData({
+                        title: "Course " + courseCode,
+                        code: courseCode,
+                        description: "Managed Course"
+                    });
+                    setLoading(false);
+                    return;
+                }
                 const docRef = doc(db, "courses", courseCode);
                 const snap = await getDoc(docRef);
                 if (snap.exists()) {

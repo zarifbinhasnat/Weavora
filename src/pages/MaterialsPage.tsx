@@ -26,6 +26,12 @@ export default function MaterialsPage() {
 
     // Fetch the real course name from Firestore
     const cleanCode = decodeURIComponent(courseCode);
+    if (!db) {
+      console.warn("Firestore not initialized — skipping course name fetch");
+      setCourseName(cleanCode);
+      return;
+    }
+
     const courseQuery = query(
       collection(db, "courses"),
       where("courseCode", "==", cleanCode)
@@ -45,6 +51,14 @@ export default function MaterialsPage() {
     // Assuming courseId is stored as "CS 4501" or "CS4501" depending on consistency
     // Let's try to match exactly what is in URL first
     const cleanCourseCode = decodeURIComponent(courseCode); // "STAT 3100"
+
+    if (!db) {
+      console.warn("Firestore not initialized — skipping materials listener");
+      setMaterials([]);
+      setPastPapers([]);
+      setLoading(false);
+      return () => {};
+    }
 
     const q = query(
       collection(db, "Documents"),

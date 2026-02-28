@@ -31,6 +31,12 @@ export default function DocumentsPage() {
 
   // Fetch documents
   const fetchDocuments = async () => {
+    if (!db) {
+      console.warn("Firestore not initialized — fetchDocuments will return empty list.");
+      setDocuments([]);
+      return;
+    }
+
     const snapshot = await getDocs(collection(db, "Documents"));
     const docs = snapshot.docs.map((d) => ({
       id: d.id,
@@ -47,6 +53,11 @@ export default function DocumentsPage() {
   const handleAdd = async () => {
     if (!title || !pdfUrl) {
       toast({ title: "Title and PDF link are required" });
+      return;
+    }
+
+    if (!db) {
+      toast({ title: "Firestore not configured — cannot add document" });
       return;
     }
 
@@ -70,6 +81,11 @@ export default function DocumentsPage() {
 
   // Delete document
   const handleDelete = async (id: string) => {
+    if (!db) {
+      toast({ title: "Firestore not configured — cannot delete document" });
+      return;
+    }
+
     await deleteDoc(doc(db, "Documents", id));
     toast({ title: "Document deleted" });
     fetchDocuments();

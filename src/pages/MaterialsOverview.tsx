@@ -25,7 +25,13 @@ export function MaterialsOverview() {
 
   useEffect(() => {
     async function fetchAllMaterials() {
-      const user = auth.currentUser;
+      const user = auth?.currentUser;
+      if (!auth || !db) {
+        console.warn("Firestore or Auth not initialized — skipping materials overview load.");
+        setLoading(false);
+        return;
+      }
+
       if (!user) {
         setLoading(false);
         return;

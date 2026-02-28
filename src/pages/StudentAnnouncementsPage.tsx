@@ -26,6 +26,12 @@ export function StudentAnnouncementsPage() {
 
     useEffect(() => {
         async function fetchAll() {
+            if (!auth || !db) {
+                console.warn("Firestore/Auth not initialized — skipping announcements fetch.");
+                setLoading(false);
+                return;
+            }
+
             const user = auth.currentUser;
             if (!user) {
                 setLoading(false);
@@ -55,6 +61,7 @@ export function StudentAnnouncementsPage() {
                 }
 
                 for (const chunk of chunks) {
+                    if (!db) continue;
                     const q = query(
                         collection(db, "classroomPosts"),
                         where("courseId", "in", chunk),

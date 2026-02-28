@@ -57,14 +57,25 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
+      if (!auth) {
+        toast({ title: "Auth not configured", description: "Firebase Auth is not initialized.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
       if (isLogin) {
         // Login flow
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
         // Fetch user role from Firestore
-        const userDoc = await getDoc(doc(db, "Users", user.uid));
-        const userData = userDoc.data();
+        let userData: any = null;
+        if (db) {
+          const userDoc = await getDoc(doc(db, "Users", user.uid));
+          userData = userDoc.data();
+        } else {
+          console.warn("Firestore not initialized — skipping fetching user profile");
+        }
         
         toast({
           title: "Welcome back!",
@@ -79,18 +90,27 @@ export default function Auth() {
         }
       } else {
         // Registration flow
+        if (!auth) {
+          toast({ title: "Auth not configured", description: "Firebase Auth is not initialized.", variant: "destructive" });
+          setIsLoading(false);
+          return;
+        }
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
         if (user) {
           // Store user data in Firestore
-          await setDoc(doc(db, "Users", user.uid), {
+          if (db) {
+            await setDoc(doc(db, "Users", user.uid), {
             email: user.email,
             firstName: email.split("@")[0], // Default first name from email
             lastName: "",
             role: role,
             photo: ""
-          });
+            });
+          } else {
+            console.warn("Firestore not initialized — skipping storing new user profile");
+          }
           
           toast({
             title: "Account created!",

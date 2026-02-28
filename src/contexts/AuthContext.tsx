@@ -28,6 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If firebase wasn't initialized, skip auth listener to avoid runtime errors
+    if (!auth || !db) {
+      console.warn("Firebase not initialized — skipping auth listener in AuthProvider");
+      setLoading(false);
+      setUser(null);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {

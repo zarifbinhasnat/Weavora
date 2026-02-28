@@ -12,26 +12,41 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+
+const hasRequiredConfig = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+
+let app = null;
+let auth = null;
+let db = null;
+let storage = null;
 
 console.log("Firebase Config Loaded:", {
   apiKey: firebaseConfig.apiKey ? "Present" : "Missing",
   projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain
+  authDomain: firebaseConfig.authDomain,
 });
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+if (!hasRequiredConfig) {
+  console.warn(
+    "Firebase config missing. Skipping Firebase initialization. Set VITE_FIREBASE_* env vars to enable Firebase features."
+  );
+} else {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    console.log("Firebase initialized.");
+  } catch (err) {
+    console.error("Firebase initialization failed:", err);
+    app = null;
+    auth = null;
+    db = null;
+    storage = null;
+  }
+}
 
-// Export authentication instance
-export const auth = getAuth(app);
-
-// Export Firestore database instance
-export const db = getFirestore(app);
-
-// Export Storage instance for file uploads
-export const storage = getStorage(app);
-
-// Export the app as default
+export { auth, db, storage };
 export default app;
