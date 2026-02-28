@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { getDocs, collection, query, where, orderBy, limit } from "firebase/firestore";
+import { getDocs, collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { getAllRecentAnnouncements, CourseAnnouncement } from "./announcements";
 
 export type NotificationItem = {
@@ -65,4 +65,74 @@ export async function fetchTeacherNotifications(userId?: string): Promise<Notifi
   });
 
   return results;
+}
+
+export function listenTeacherNotifications(userId: string | undefined, onChange: (items: NotificationItem[]) => void) {
+  if (!db) {
+    console.debug("listenTeacherNotifications: no db initialized");
+    return () => {};
+  }
+
+  const unsubscribes: Array<() => void> = [];
+
+  // keep latest arrays and merge on updates
+  let latestAnns: NotificationItem[] = [];
+  let latestDls: NotificationItem[] = [];
+
+  // announcements - listen to latest classroomPosts type=announcement
+  try {
+    const q = query(collection(db, "classroomPosts"), where("type", "==", "announcement"), orderBy("createdAt", "desc"), limit(20));
+    const unA = onSnapshot(q, (snap) => {
+      latestAnns = snap.docs.map((d) => {
+        const data = d.data() as any;
+        return {
+          id: `ann_${d.id}`,
+          title: data.title ?? "Announcement",
+          message: data.content ?? data.text ?? "",
+          time: data.createdAt ?? Date.now(),
+          read: false,
+          type: "announcement",
+          meta: { id: d.id, ...data },
+        } as NotificationItem;
+      });
+      const combined = [...latestAnns, ...latestDls];
+      combined.sort((a,b) => (b.time as any) - (a.time as any));
+      onChange(combined);
+    }, (err) => console.error(err));
+    unsubscribes.push(unA);
+  } catch (err) {
+    console.debug("listenTeacherNotifications: announcements listener failed", err);
+  }
+
+  // deadlines for user
+  try {
+    if (userId) {
+      const qd = query(collection(db, "deadlines"), where("userId", "==", userId), orderBy("dueDate", "asc"));
+      const unD = onSnapshot(qd, (snap) => {
+        latestDls = snap.docs.map((d) => {
+          const data = d.data() as any;
+          const dueDate = data.dueDate?.toDate?.() ?? null;
+          return {
+            id: `dl_${d.id}`,
+            title: data.title ?? "Upcoming deadline",
+            message: `Due ${dueDate ? dueDate.toLocaleString() : "soon"} — ${data.course ?? ""}`,
+            time: dueDate ?? Date.now(),
+            read: false,
+            type: "deadline",
+            meta: { id: d.id, ...data },
+          };
+        });
+        const combined = [...latestAnns, ...latestDls];
+        combined.sort((a,b) => (b.time as any) - (a.time as any));
+        onChange(combined);
+      }, (err) => console.error(err));
+      unsubscribes.push(unD);
+    }
+  } catch (err) {
+    console.debug("listenTeacherNotifications: deadlines listener failed", err);
+  }
+
+  return () => {
+    unsubscribes.forEach((u) => u());
+  };
 }

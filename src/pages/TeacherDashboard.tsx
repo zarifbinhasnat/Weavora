@@ -5,7 +5,8 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Search, User, Bell } from "lucide-react";
 import NotificationBar from "@/components/teacher/NotificationBar";
 import { useEffect } from "react";
-import { fetchTeacherNotifications } from "@/components/backend/notifications";
+import { fetchTeacherNotifications, listenTeacherNotifications } from "@/components/backend/notifications";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Import components properly
 import { TeacherClasses as TeacherClassesComponent } from "@/components/teacher/TeacherClasses";
@@ -80,34 +81,43 @@ export default function TeacherDashboard() {
     setPendingNotifications(notifications.filter((n) => !n.read).length);
   }, [notifications]);
 
-  // Load notifications when dashboard mounts or when notifications panel opens
+  const { user, loading: authLoading } = useAuth();
+
+  // Real-time notifications when authenticated; otherwise fetch public announcements once
   useEffect(() => {
+    let unsub: (() => void) | null = null;
     let mounted = true;
-    async function load() {
+
+    async function init() {
       setNotificationsLoading(true);
       try {
-        const userId = (window as any)?.__WEAVORA_USER_ID || null; // best-effort; falls back to demo
-        const items = await fetchTeacherNotifications(userId || undefined);
-        if (!mounted) return;
-        if (items.length > 0) {
-          setNotifications(items);
+        if (user?.uid) {
+          // listen to teacher-specific notifications
+          unsub = listenTeacherNotifications(user.uid, (items) => {
+            if (!mounted) return;
+            setNotifications(items);
+          });
         } else {
-          // fallback demo items
-          setNotifications([
-            { id: "demo1", title: "New assignment submitted", message: "John Doe submitted Assignment 3.", time: "2m", read: false, type: "message" },
-            { id: "demo2", title: "AI summaries pending", message: "3 AI summaries awaiting review.", time: "1h", read: false, type: "announcement" },
+          // Not authenticated or firebase not initialized — load public announcements as fallback
+          const items = await fetchTeacherNotifications(undefined);
+          if (!mounted) return;
+          if (items.length > 0) setNotifications(items);
+          else setNotifications([
+            { id: "demo1", title: "New assignment submitted", message: "John Doe submitted Assignment 3.", time: Date.now(), read: false, type: "message" },
+            { id: "demo2", title: "AI summaries pending", message: "3 AI summaries awaiting review.", time: Date.now() - 3600 * 1000, read: false, type: "announcement" },
           ]);
         }
       } catch (err) {
-        console.error("Failed to load notifications:", err);
+        console.error("Failed to init notifications:", err);
       } finally {
         setNotificationsLoading(false);
       }
     }
 
-    load();
-    return () => { mounted = false; };
-  }, []);
+    init();
+
+    return () => { mounted = false; if (unsub) unsub(); };
+  }, [user?.uid]);
 
   const renderContent = () => {
     switch (activeTab) {
