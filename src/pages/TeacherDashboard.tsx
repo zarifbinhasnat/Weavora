@@ -5,8 +5,10 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Search, User, Bell } from "lucide-react";
 import NotificationBar from "@/components/teacher/NotificationBar";
 import { useEffect } from "react";
-import { fetchTeacherNotifications, listenTeacherNotifications } from "@/components/backend/notifications";
+import { fetchTeacherNotifications, listenTeacherNotifications, markNotificationRead, removeNotification } from "@/components/backend/notifications";
 import { useAuth } from "@/contexts/AuthContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { format } from "date-fns";
 
 // Import components properly
 import { TeacherClasses as TeacherClassesComponent } from "@/components/teacher/TeacherClasses";
@@ -122,28 +124,76 @@ export default function TeacherDashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case "notifications":
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-display font-semibold text-foreground mb-4">Notifications</h2>
-            <div className="space-y-4">
-              {notifications.map((n) => (
-                <div key={n.id} className="p-4 bg-white border rounded-lg">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-medium">{n.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{n.message}</p>
+            return (
+              <ErrorBoundary>
+                <div className="p-6">
+                  <h2 className="text-2xl font-display font-semibold text-foreground mb-4">Notifications</h2>
+
+                  {notificationsLoading && (
+                    <div className="p-6">
+                      <p className="text-sm text-muted-foreground">Loading notifications…</p>
                     </div>
-                    <div className="text-xs text-muted-foreground">{typeof n.time === 'number' ? new Date(n.time).toLocaleString() : n.time}</div>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    {!n.read && <button onClick={() => setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))} className="px-3 py-1 bg-primary text-primary-foreground rounded">Mark read</button>}
-                    <button onClick={() => setNotifications(prev => prev.filter(x => x.id !== n.id))} className="px-3 py-1 border rounded">Dismiss</button>
-                  </div>
+                  )}
+
+                  {!notificationsLoading && (!Array.isArray(notifications) || notifications.length === 0) && (
+                    <div className="p-6">
+                      <p className="text-sm text-muted-foreground">No notifications right now.</p>
+                    </div>
+                  )}
+
+                  {!notificationsLoading && Array.isArray(notifications) && notifications.length > 0 && (
+                    <div className="space-y-4">
+                      {notifications.map((n) => (
+                        <div key={String(n?.id)} className="p-4 bg-white border rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className="font-medium">{n?.title ?? "(No title)"}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">{n?.message ?? ""}</p>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {typeof n?.time === "number"
+                                ? format(new Date(n.time as number), "PP p")
+                                : n?.time?.toString?.() ?? ""}
+                            </div>
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            {!n?.read && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await markNotificationRead(n.id);
+                                  } catch (err) {
+                                    console.debug("markNotificationRead error", err);
+                                  }
+                                  setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+                                }}
+                                className="px-3 py-1 bg-primary text-primary-foreground rounded"
+                              >
+                                Mark read
+                              </button>
+                            )}
+
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await removeNotification(n.id);
+                                } catch (err) {
+                                  console.debug("removeNotification error", err);
+                                }
+                                setNotifications((prev) => prev.filter((x) => x.id !== n.id));
+                              }}
+                              className="px-3 py-1 border rounded"
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        );
+              </ErrorBoundary>
+            );
       case "classes":
         return (
           <div className="p-6">

@@ -20,7 +20,7 @@ export default function NotificationBar({
   onViewAll?: () => void;
 }) {
   return (
-    <div onClick={(e) => e.stopPropagation()} className="w-96 bg-white border rounded-lg shadow-2xl overflow-hidden ring-1 ring-black/5">
+    <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Notifications" className="w-96 bg-white border rounded-lg shadow-2xl overflow-hidden ring-1 ring-black/5">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-md">
@@ -53,7 +53,7 @@ export default function NotificationBar({
           <div className="p-6 text-sm text-muted-foreground">You're all caught up 🎉</div>
         )}
 
-        {!loading && notifications.map((n) => (
+        {!loading && Array.isArray(notifications) && notifications.map((n) => (
           <div key={n.id} className={`flex items-start gap-3 px-4 py-4 border-b ${n.read ? "" : "bg-primary/5"}`}>
             <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-secondary/50 flex items-center justify-center text-primary font-medium">
               {n.type === "announcement" ? "A" : n.type === "deadline" ? "D" : n.type === "message" ? "M" : "!"}

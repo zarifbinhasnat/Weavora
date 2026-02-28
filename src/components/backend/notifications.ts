@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { getDocs, collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { getDocs, collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, deleteDoc } from "firebase/firestore";
 import { getAllRecentAnnouncements, CourseAnnouncement } from "./announcements";
 
 export type NotificationItem = {
@@ -135,4 +135,31 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
   return () => {
     unsubscribes.forEach((u) => u());
   };
+}
+
+export async function markNotificationRead(notificationId: string) {
+  try {
+    if (!db) return;
+    // If notifications are stored in a dedicated collection, update their read flag.
+    // We support ids prefixed withdl_ or ann_ — for demo we don't persist.
+    if (notificationId.startsWith("dl_") || notificationId.startsWith("notif_")) {
+      const id = notificationId.replace(/^dl_|^notif_/, "");
+      await updateDoc(doc(db, "deadlines", id), { read: true }).catch(() => {});
+    }
+    // announcements typically are not marked read globally — skip.
+  } catch (err) {
+    console.debug("markNotificationRead failed", err);
+  }
+}
+
+export async function removeNotification(notificationId: string) {
+  try {
+    if (!db) return;
+    if (notificationId.startsWith("dl_")) {
+      const id = notificationId.replace(/^dl_/, "");
+      await deleteDoc(doc(db, "deadlines", id)).catch(() => {});
+    }
+  } catch (err) {
+    console.debug("removeNotification failed", err);
+  }
 }
