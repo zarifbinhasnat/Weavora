@@ -20,7 +20,7 @@ export default function NotificationBar({
   onViewAll?: () => void;
 }) {
   return (
-    <div className="w-96 bg-white border rounded-lg shadow-2xl overflow-hidden ring-1 ring-black/5">
+    <div onClick={(e) => e.stopPropagation()} className="w-96 bg-white border rounded-lg shadow-2xl overflow-hidden ring-1 ring-black/5">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-md">
@@ -33,12 +33,12 @@ export default function NotificationBar({
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={onClearAll}
+            onClick={(e) => { e.stopPropagation(); onClearAll(); }}
             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
           >
             Clear all
           </button>
-          <button onClick={onClose} className="p-1 rounded hover:bg-secondary/50">
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-1 rounded hover:bg-secondary/50">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
@@ -69,13 +69,13 @@ export default function NotificationBar({
               <div className="mt-3 flex items-center gap-3">
                 {!n.read && (
                   <button
-                    onClick={() => onMarkRead(n.id)}
+                    onClick={(e) => { e.stopPropagation(); onMarkRead(n.id); }}
                     className="text-xs text-primary hover:underline"
                   >
                     Mark read
                   </button>
                 )}
-                <button onClick={() => onRemove(n.id)} className="text-xs text-destructive hover:underline">
+                <button onClick={(e) => { e.stopPropagation(); onRemove(n.id); }} className="text-xs text-destructive hover:underline">
                   Dismiss
                 </button>
               </div>
@@ -85,7 +85,7 @@ export default function NotificationBar({
       </div>
 
       <div className="px-4 py-3 border-t text-right bg-white">
-        <button onClick={onViewAll} className="text-sm text-primary font-medium">View all notifications →</button>
+        <button onClick={(e) => { e.stopPropagation(); onViewAll(); }} className="text-sm text-primary font-medium">View all notifications →</button>
       </div>
     </div>
   );
