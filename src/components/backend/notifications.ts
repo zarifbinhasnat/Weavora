@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { getDocs, collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { getDocs, collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAllRecentAnnouncements, CourseAnnouncement } from "./announcements";
 
 export type NotificationItem = {
@@ -78,11 +78,14 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
   // keep latest arrays and merge on updates
   let latestAnns: NotificationItem[] = [];
   let latestDls: NotificationItem[] = [];
+  // per-user read flags
+  let latestReads: Record<string, boolean> = {};
 
   // announcements - listen to latest classroomPosts type=announcement
   try {
     const q = query(collection(db, "classroomPosts"), where("type", "==", "announcement"), orderBy("createdAt", "desc"), limit(20));
     const unA = onSnapshot(q, (snap) => {
+      console.debug("listenTeacherNotifications: classroomPosts snapshot, docs:", snap.docs.length);
       latestAnns = snap.docs.map((d) => {
         const data = d.data() as any;
         return {
@@ -90,7 +93,7 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
           title: data.title ?? "Announcement",
           message: data.content ?? data.text ?? "",
           time: data.createdAt ?? Date.now(),
-          read: false,
+          read: latestReads[`ann_${d.id}`] ?? data.read ?? false,
           type: "announcement",
           meta: { id: d.id, ...data },
         } as NotificationItem;
@@ -109,6 +112,7 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
     if (userId) {
       const qd = query(collection(db, "deadlines"), where("userId", "==", userId), orderBy("dueDate", "asc"));
       const unD = onSnapshot(qd, (snap) => {
+        console.debug("listenTeacherNotifications: deadlines snapshot, docs:", snap.docs.length);
         latestDls = snap.docs.map((d) => {
           const data = d.data() as any;
           const dueDate = data.dueDate?.toDate?.() ?? null;
@@ -117,7 +121,7 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
             title: data.title ?? "Upcoming deadline",
             message: `Due ${dueDate ? dueDate.toLocaleString() : "soon"} — ${data.course ?? ""}`,
             time: dueDate ?? Date.now(),
-            read: false,
+            read: latestReads[`dl_${d.id}`] ?? data.read ?? false,
             type: "deadline",
             meta: { id: d.id, ...data },
           };
@@ -132,21 +136,68 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
     console.debug("listenTeacherNotifications: deadlines listener failed", err);
   }
 
+  // listen to per-user read flags to merge into items
+  try {
+    if (userId) {
+      const qr = query(collection(db, "notificationReads"), where("userId", "==", userId));
+      const unR = onSnapshot(qr, (snap) => {
+        latestReads = {};
+        snap.docs.forEach((d) => {
+          const data = d.data() as any;
+          if (data && data.notificationId) latestReads[data.notificationId] = !!data.read;
+        });
+        // rebuild combined view using latest read flags
+        const combined = [...latestAnns.map(a => ({ ...a, read: latestReads[a.id] ?? a.read })), ...latestDls.map(d => ({ ...d, read: latestReads[d.id] ?? d.read }))];
+        combined.sort((a,b) => (b.time as any) - (a.time as any));
+        console.debug("notificationReads snapshot received, merged reads:", latestReads);
+        onChange(combined);
+      }, (err) => console.error(err));
+      unsubscribes.push(unR);
+    }
+  } catch (err) {
+    console.debug("listenTeacherNotifications: notificationReads listener failed", err);
+  }
+
   return () => {
     unsubscribes.forEach((u) => u());
   };
 }
 
-export async function markNotificationRead(notificationId: string) {
+export async function markNotificationRead(notificationId: string, userId?: string) {
   try {
-    if (!db) return;
-    // If notifications are stored in a dedicated collection, update their read flag.
-    // We support ids prefixed withdl_ or ann_ — for demo we don't persist.
-    if (notificationId.startsWith("dl_") || notificationId.startsWith("notif_")) {
-      const id = notificationId.replace(/^dl_|^notif_/, "");
-      await updateDoc(doc(db, "deadlines", id), { read: true }).catch(() => {});
+    if (!db) {
+      console.debug("markNotificationRead: no db");
+      return;
     }
-    // announcements typically are not marked read globally — skip.
+
+    // If deadline doc exists, try to mark it read there too (backwards-compat)
+    if (notificationId.startsWith("dl_")) {
+      const id = notificationId.replace(/^dl_/, "");
+      try {
+        await updateDoc(doc(db, "deadlines", id), { read: true });
+        console.debug(`markNotificationRead: updated deadlines/${id} read=true`);
+      } catch (err) {
+        console.debug("markNotificationRead: failed to update deadlines doc", err);
+      }
+    }
+
+    // Persist per-user read state into `notificationReads` collection so badge is per-user
+    if (userId) {
+      const key = `${userId}_${notificationId}`;
+      try {
+        await setDoc(doc(db, "notificationReads", key), {
+          userId,
+          notificationId,
+          read: true,
+          updatedAt: serverTimestamp(),
+        });
+        console.debug(`markNotificationRead: persisted read for ${notificationId} as ${key}`);
+      } catch (err) {
+        console.error("markNotificationRead: failed to persist notificationReads", err);
+      }
+    } else {
+      console.debug("markNotificationRead: no userId provided, skipping per-user persistence");
+    }
   } catch (err) {
     console.debug("markNotificationRead failed", err);
   }

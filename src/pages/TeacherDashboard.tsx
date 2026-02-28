@@ -79,9 +79,6 @@ export default function TeacherDashboard() {
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [pendingNotifications, setPendingNotifications] = useState(0);
 
-  useEffect(() => {
-    setPendingNotifications(notifications.filter((n) => !n.read).length);
-  }, [notifications]);
 
   const { user, loading: authLoading } = useAuth();
 
@@ -97,7 +94,11 @@ export default function TeacherDashboard() {
           // listen to teacher-specific notifications
           unsub = listenTeacherNotifications(user.uid, (items) => {
             if (!mounted) return;
+            // items come from Firestore listeners and merged read flags
             setNotifications(items);
+            const unread = Array.isArray(items) ? items.filter((n) => !n.read).length : 0;
+            setPendingNotifications(unread);
+            console.debug("listenTeacherNotifications: received items", items.length, "unread:", unread);
           });
         } else {
           // Not authenticated or firebase not initialized — load public announcements as fallback
@@ -108,6 +109,10 @@ export default function TeacherDashboard() {
             { id: "demo1", title: "New assignment submitted", message: "John Doe submitted Assignment 3.", time: Date.now(), read: false, type: "message" },
             { id: "demo2", title: "AI summaries pending", message: "3 AI summaries awaiting review.", time: Date.now() - 3600 * 1000, read: false, type: "announcement" },
           ]);
+          // compute pending for fallback local items
+          const unread = Array.isArray(items) ? items.filter((n) => !n.read).length : 0;
+          setPendingNotifications(unread);
+          console.debug("fetchTeacherNotifications fallback: items", items.length, "unread:", unread);
         }
       } catch (err) {
         console.error("Failed to init notifications:", err);
@@ -161,7 +166,8 @@ export default function TeacherDashboard() {
                               <button
                                 onClick={async () => {
                                   try {
-                                    await markNotificationRead(n.id);
+                                    await markNotificationRead(n.id, user?.uid);
+                                    console.debug("notifications page: markNotificationRead called for", n.id, "user", user?.uid);
                                   } catch (err) {
                                     console.debug("markNotificationRead error", err);
                                   }
@@ -177,6 +183,7 @@ export default function TeacherDashboard() {
                               onClick={async () => {
                                 try {
                                   await removeNotification(n.id);
+                                  console.debug("notifications page: removeNotification called for", n.id);
                                 } catch (err) {
                                   console.debug("removeNotification error", err);
                                 }
@@ -267,8 +274,24 @@ export default function TeacherDashboard() {
                           loading={notificationsLoading}
                           onClose={() => setShowNotifications(false)}
                           onClearAll={() => setNotifications([])}
-                          onMarkRead={(id: string) => setNotifications((prev) => prev.map(n => n.id === id ? { ...n, read: true } : n))}
-                          onRemove={(id: string) => setNotifications((prev) => prev.filter(n => n.id !== id))}
+                          onMarkRead={async (id: string) => {
+                            try {
+                              await markNotificationRead(id, user?.uid);
+                              console.debug("onMarkRead: markNotificationRead called for", id, "user", user?.uid);
+                            } catch (err) {
+                              console.debug("onMarkRead: markNotificationRead error", err);
+                            }
+                            setNotifications((prev) => prev.map(n => n.id === id ? { ...n, read: true } : n));
+                          }}
+                          onRemove={async (id: string) => {
+                            try {
+                              await removeNotification(id);
+                              console.debug("onRemove: removed", id);
+                            } catch (err) {
+                              console.debug("onRemove error", err);
+                            }
+                            setNotifications((prev) => prev.filter(n => n.id !== id));
+                          }}
                           onViewAll={() => { setActiveTab("notifications"); setShowNotifications(false); }}
                         />
                       </div>
