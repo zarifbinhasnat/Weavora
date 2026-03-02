@@ -35,19 +35,29 @@ export function StudentClassSummary({
     if (!user?.uid) return;
 
     setLoading(true);
-    getStudentSummaries(user.uid, classId).then((data) => {
-      setSummaries(data);
-      setLoading(false);
-    });
+    getStudentSummaries(user.uid, classId)
+      .then((data) => {
+        setSummaries(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("❌ Error loading summaries:", err);
+        setError(err.message || "Failed to load summaries");
+        setLoading(false);
+      });
 
     // Set up real-time listener
-    const unsubscribe = listenToStudentSummaries(
-      user.uid,
-      classId,
-      setSummaries
-    );
-
-    return unsubscribe;
+    try {
+      const unsubscribe = listenToStudentSummaries(
+        user.uid,
+        classId,
+        setSummaries
+      );
+      return unsubscribe;
+    } catch (err) {
+      console.error("❌ Error setting up listener:", err);
+      return () => {};
+    }
   }, [user?.uid, classId]);
 
   const handleSubmit = async (e: React.FormEvent) => {

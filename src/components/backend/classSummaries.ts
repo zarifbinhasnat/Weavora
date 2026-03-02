@@ -12,6 +12,7 @@ import {
   updateDoc,
   Timestamp,
   Firestore,
+  onSnapshot,
 } from "firebase/firestore";
 
 // ============================================
@@ -89,25 +90,30 @@ export async function getStudentSummaries(
     q = query(
       collection(db, "classSummaries"),
       where("studentId", "==", studentId),
-      where("classId", "==", classId),
-      orderBy("createdAt", "desc")
+      where("classId", "==", classId)
     );
   } else {
     q = query(
       collection(db, "classSummaries"),
-      where("studentId", "==", studentId),
-      orderBy("createdAt", "desc")
+      where("studentId", "==", studentId)
     );
   }
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((docSnap) => {
+  const summaries = snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as any;
     return {
       id: docSnap.id,
       ...data,
     };
   }) as ClassSummaryWithTimestamps[];
+
+  // Sort by createdAt in descending order
+  return summaries.sort((a, b) => {
+    const timeA = a.createdAt?.toMillis?.() || 0;
+    const timeB = b.createdAt?.toMillis?.() || 0;
+    return timeB - timeA;
+  });
 }
 
 /**
@@ -145,25 +151,30 @@ export async function getClassSummaries(
     q = query(
       collection(db, "classSummaries"),
       where("classId", "==", classId),
-      where("status", "==", statusFilter),
-      orderBy("createdAt", "desc")
+      where("status", "==", statusFilter)
     );
   } else {
     q = query(
       collection(db, "classSummaries"),
-      where("classId", "==", classId),
-      orderBy("createdAt", "desc")
+      where("classId", "==", classId)
     );
   }
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((docSnap) => {
+  const summaries = snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as any;
     return {
       id: docSnap.id,
       ...data,
     };
   }) as ClassSummaryWithTimestamps[];
+
+  // Sort by createdAt in descending order
+  return summaries.sort((a, b) => {
+    const timeA = a.createdAt?.toMillis?.() || 0;
+    const timeB = b.createdAt?.toMillis?.() || 0;
+    return timeB - timeA;
+  });
 }
 
 /**
@@ -267,20 +278,30 @@ export function listenToStudentSummaries(
   const q = query(
     collection(db, "classSummaries"),
     where("studentId", "==", studentId),
-    where("classId", "==", classId),
-    orderBy("createdAt", "desc")
+    where("classId", "==", classId)
   );
 
-  const unsubscribe = require("firebase/firestore").onSnapshot(
+  const unsubscribe = onSnapshot(
     q,
-    (snapshot: any) => {
-      const summaries = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ClassSummaryWithTimestamps[];
+    (snapshot) => {
+      const summaries = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as any;
+        return {
+          id: docSnap.id,
+          ...data,
+        };
+      }) as ClassSummaryWithTimestamps[];
+      
+      // Sort by createdAt in descending order
+      summaries.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || 0;
+        const timeB = b.createdAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+      
       callback(summaries);
     },
-    (error: any) => {
+    (error) => {
       console.error("Error listening to summaries:", error);
       callback([]);
     }
@@ -297,35 +318,42 @@ export function listenToClassSummaries(
   statusFilter?: "pending" | "approved" | "rejected",
   callback?: (summaries: ClassSummaryWithTimestamps[]) => void
 ): () => void {
-  const { onSnapshot } = require("firebase/firestore");
-
   let q;
 
   if (statusFilter) {
     q = query(
       collection(db, "classSummaries"),
       where("classId", "==", classId),
-      where("status", "==", statusFilter),
-      orderBy("createdAt", "desc")
+      where("status", "==", statusFilter)
     );
   } else {
     q = query(
       collection(db, "classSummaries"),
-      where("classId", "==", classId),
-      orderBy("createdAt", "desc")
+      where("classId", "==", classId)
     );
   }
 
   const unsubscribe = onSnapshot(
     q,
-    (snapshot: any) => {
-      const summaries = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ClassSummaryWithTimestamps[];
+    (snapshot) => {
+      const summaries = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as any;
+        return {
+          id: docSnap.id,
+          ...data,
+        };
+      }) as ClassSummaryWithTimestamps[];
+      
+      // Sort by createdAt in descending order
+      summaries.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || 0;
+        const timeB = b.createdAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+      
       if (callback) callback(summaries);
     },
-    (error: any) => {
+    (error) => {
       console.error("Error listening to class summaries:", error);
       if (callback) callback([]);
     }

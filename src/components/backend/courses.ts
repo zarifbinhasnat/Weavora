@@ -82,6 +82,12 @@ export async function createCourse(params: {
     updatedAt: serverTimestamp(),
   });
 
+  console.log("📝 Course created:", {
+    courseId: courseRef.id,
+    joinCode,
+    name: trimmedName,
+  });
+
   await setDoc(doc(db, "courses", courseRef.id, "members", params.teacherUid), {
     uid: params.teacherUid,
     role: "teacher" as MemberRole,
@@ -101,14 +107,26 @@ export async function createCourse(params: {
 
 export async function joinCourseByCode(params: { joinCode: string; uid: string }) {
   const code = params.joinCode.trim().toUpperCase();
+  
+  console.log("🔍 Attempting to join with code:", code);
+  console.log("📊 Raw input:", params.joinCode);
+  console.log("👤 User ID:", params.uid);
 
   const q = query(collection(db, "courses"), where("joinCode", "==", code), limit(1));
   const snap = await getDocs(q);
 
-  if (snap.empty) throw new Error("Invalid join code");
+  console.log("🔎 Search results:", snap.size, "courses found");
+  
+  if (snap.empty) {
+    console.error("❌ No course found with joinCode:", code);
+    throw new Error("Invalid join code");
+  }
 
   const courseDoc = snap.docs[0];
   const courseId = courseDoc.id;
+  
+  console.log("✅ Found course:", courseId);
+  console.log("📋 Course data:", courseDoc.data());
 
   await setDoc(doc(db, "courses", courseId, "members", params.uid), {
     uid: params.uid,
@@ -125,6 +143,7 @@ export async function joinCourseByCode(params: { joinCode: string; uid: string }
 
   await updateDoc(doc(db, "courses", courseId), { updatedAt: serverTimestamp() });
 
+  console.log("✨ Successfully joined course!");
   return { courseId };
 }
 

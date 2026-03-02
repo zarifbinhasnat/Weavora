@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Users, Calendar, Plus, Copy } from "lucide-react";
 
-import { auth } from "../backend/firebase.js";
+import { useAuth } from "../../contexts/AuthContext";
 import { db } from "../backend/firebase.js";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 
@@ -42,20 +42,25 @@ export function TeacherClasses({ limit, onCreateClass }: TeacherClassesProps) {
   const [classes, setClasses] = useState<ClassCard[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) {
+    console.log("📚 TeacherClasses - user:", user?.uid, user?.email);
+    
+    if (!user?.uid) {
+      console.log("❌ No user UID");
       setClasses([]);
       setLoading(false);
       return;
     }
 
+    console.log("🔍 Querying courses for teacherId:", user.uid);
     const q = query(collection(db, "courses"), where("teacherId", "==", user.uid));
 
     const unsub = onSnapshot(
       q,
       (snap) => {
+        console.log("✅ Found", snap.docs.length, "courses for this teacher");
         const rows: ClassCard[] = snap.docs.map((d) => {
           const data = d.data() as CourseDoc;
 
@@ -80,7 +85,7 @@ export function TeacherClasses({ limit, onCreateClass }: TeacherClassesProps) {
     );
 
     return () => unsub();
-  }, []);
+  }, [user?.uid]);
 
   const displayClasses = useMemo(
     () => (limit ? classes.slice(0, limit) : classes),

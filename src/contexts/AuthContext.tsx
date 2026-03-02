@@ -24,10 +24,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // DEVELOPMENT MODE: Check URL for role override
-  const urlParams = new URLSearchParams(window.location.search);
-  const roleOverride = urlParams.get('role');
-  
   const mockStudentUser: User = {
     uid: "dev-student-456",
     email: "student@dev.com",
@@ -46,19 +42,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     avatar: ""
   };
   
-  // Use role from URL param if provided, otherwise default to student
-  const mockUser = roleOverride === 'teacher' ? mockTeacherUser : mockStudentUser;
-  
-  const [user, setUser] = useState<User | null>(mockUser);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // DEVELOPMENT MODE: Update user when URL changes
+    // DEVELOPMENT MODE: Check URL for role override every time location changes
+    console.log("🔄 AuthProvider useEffect - checking URL...", window.location.href);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const roleOverride = urlParams.get('role');
+    
+    console.log("📍 URL roleOverride:", roleOverride);
+    
+    // Use role from URL param if provided, otherwise default to student
+    const mockUser = roleOverride === 'teacher' ? mockTeacherUser : mockStudentUser;
+    
     const currentRole = roleOverride === 'teacher' ? 'Teacher' : 'Student';
-    console.log(`🚀 DEVELOPMENT MODE: Auto-logged in as ${currentRole}`);
+    console.log(`🚀 DEVELOPMENT MODE: Auto-logged in as ${currentRole}`, {
+      uid: mockUser.uid,
+      role: mockUser.role,
+      email: mockUser.email
+    });
+    
     setUser(mockUser);
     setLoading(false);
-    return;
+    
+    // Also listen for popstate events (browser back/forward navigation)
+    const handlePopState = () => {
+      console.log("🔙 Popstate detected - re-checking role...");
+      const newParams = new URLSearchParams(window.location.search);
+      const newRoleOverride = newParams.get('role');
+      const newMockUser = newRoleOverride === 'teacher' ? mockTeacherUser : mockStudentUser;
+      setUser(newMockUser);
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
     
     // Original auth code (commented out for development)
     /*
@@ -105,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
     */
-  }, []);
+  }, [window.location.search]); // Re-run when URL search params change
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Login is handled by Firebase Auth in login.js component

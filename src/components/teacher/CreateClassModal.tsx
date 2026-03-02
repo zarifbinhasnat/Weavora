@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 import { createCourse } from "../backend/courses";
-import { auth } from "../backend/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 interface CreateClassModalProps {
@@ -10,6 +10,7 @@ interface CreateClassModalProps {
 }
 
 export function CreateClassModal({ onClose }: CreateClassModalProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     code: "",
@@ -24,7 +25,6 @@ export function CreateClassModal({ onClose }: CreateClassModalProps) {
     e.preventDefault();
     setError("");
 
-    const user = auth.currentUser;
     if (!user) {
       setError("Please login first.");
       return;
@@ -40,7 +40,7 @@ export function CreateClassModal({ onClose }: CreateClassModalProps) {
         courseCode: formData.code,
         session: formData.session,
         teacherUid: user.uid,
-        teacherName: user.email ?? "",
+        teacherName: user.displayName || user.email || "Teacher",
       });
 
       alert(`Class created!\nJoin code: ${res.joinCode}`);
