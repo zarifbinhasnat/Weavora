@@ -5,6 +5,7 @@ import {
   deletePost,
   listenToPosts,
 } from "../backend/classroomPosts";
+import { notifyTeacherOfPost } from "../backend/notifications";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,6 +91,17 @@ export default function ClassroomPosts({ courseId: propCourseId, userRole = "tea
         postType,
         courseId
       );
+
+      // Notify teacher when student creates a post
+      if (userRole === "student") {
+        await notifyTeacherOfPost(
+          courseId,
+          user?.displayName || user?.email || "Unknown",
+          title,
+          postType
+        );
+      }
+
       setTitle("");
       setContent("");
     } catch (err) {

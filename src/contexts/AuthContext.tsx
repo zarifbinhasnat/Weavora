@@ -24,10 +24,44 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // DEVELOPMENT MODE: Check URL for role override
+  const urlParams = new URLSearchParams(window.location.search);
+  const roleOverride = urlParams.get('role');
+  
+  const mockStudentUser: User = {
+    uid: "dev-student-456",
+    email: "student@dev.com",
+    name: "Dev Student",
+    displayName: "Dev Student",
+    role: "student",
+    avatar: ""
+  };
+  
+  const mockTeacherUser: User = {
+    uid: "dev-teacher-123",
+    email: "teacher@dev.com",
+    name: "Dev Teacher",
+    displayName: "Dev Teacher",
+    role: "teacher",
+    avatar: ""
+  };
+  
+  // Use role from URL param if provided, otherwise default to student
+  const mockUser = roleOverride === 'teacher' ? mockTeacherUser : mockStudentUser;
+  
+  const [user, setUser] = useState<User | null>(mockUser);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // DEVELOPMENT MODE: Update user when URL changes
+    const currentRole = roleOverride === 'teacher' ? 'Teacher' : 'Student';
+    console.log(`🚀 DEVELOPMENT MODE: Auto-logged in as ${currentRole}`);
+    setUser(mockUser);
+    setLoading(false);
+    return;
+    
+    // Original auth code (commented out for development)
+    /*
     // If firebase wasn't initialized, skip auth listener to avoid runtime errors
     if (!auth || !db) {
       console.warn("Firebase not initialized — skipping auth listener in AuthProvider");
@@ -70,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
+    */
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {

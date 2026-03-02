@@ -94,11 +94,9 @@ export default function TeacherDashboard() {
           // listen to teacher-specific notifications
           unsub = listenTeacherNotifications(user.uid, (items) => {
             if (!mounted) return;
-            // items come from Firestore listeners and merged read flags
             setNotifications(items);
             const unread = Array.isArray(items) ? items.filter((n) => !n.read).length : 0;
             setPendingNotifications(unread);
-            console.debug("listenTeacherNotifications: received items", items.length, "unread:", unread);
           });
         } else {
           // Not authenticated or firebase not initialized — load public announcements as fallback
@@ -112,7 +110,6 @@ export default function TeacherDashboard() {
           // compute pending for fallback local items
           const unread = Array.isArray(items) ? items.filter((n) => !n.read).length : 0;
           setPendingNotifications(unread);
-          console.debug("fetchTeacherNotifications fallback: items", items.length, "unread:", unread);
         }
       } catch (err) {
         console.error("Failed to init notifications:", err);
@@ -164,14 +161,18 @@ export default function TeacherDashboard() {
                           <div className="mt-3 flex gap-2">
                             {!n?.read && (
                               <button
-                                onClick={async () => {
+                                type="button"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                   try {
                                     await markNotificationRead(n.id, user?.uid);
-                                    console.debug("notifications page: markNotificationRead called for", n.id, "user", user?.uid);
+
+                                    setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+                                    setPendingNotifications((prev) => Math.max(0, prev - 1));
                                   } catch (err) {
-                                    console.debug("markNotificationRead error", err);
+                                    console.error("markNotificationRead error", err);
                                   }
-                                  setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
                                 }}
                                 className="px-3 py-1 bg-primary text-primary-foreground rounded"
                               >
@@ -180,14 +181,20 @@ export default function TeacherDashboard() {
                             )}
 
                             <button
-                              onClick={async () => {
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 try {
-                                  await removeNotification(n.id);
-                                  console.debug("notifications page: removeNotification called for", n.id);
+                                  await removeNotification(n.id, user?.uid);
+                                  const wasUnread = !n.read;
+                                  setNotifications((prev) => prev.filter((x) => x.id !== n.id));
+                                  if (wasUnread) {
+                                    setPendingNotifications((prev) => Math.max(0, prev - 1));
+                                  }
                                 } catch (err) {
-                                  console.debug("removeNotification error", err);
+                                  console.error("removeNotification error", err);
                                 }
-                                setNotifications((prev) => prev.filter((x) => x.id !== n.id));
                               }}
                               className="px-3 py-1 border rounded"
                             >
@@ -255,7 +262,12 @@ export default function TeacherDashboard() {
                   </div>
                   <div className="relative">
                     <button
-                      onClick={() => setShowNotifications((s) => !s)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowNotifications((s) => !s);
+                      }}
                       aria-label="Notifications"
                       className="relative w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
                     >
@@ -268,36 +280,54 @@ export default function TeacherDashboard() {
                     </button>
 
                     {showNotifications && (
-                      <div className="absolute right-0 mt-3 z-50">
-                        <NotificationBar
-                          notifications={notifications}
-                          loading={notificationsLoading}
-                          onClose={() => setShowNotifications(false)}
-                          onClearAll={() => setNotifications([])}
-                          onMarkRead={async (id: string) => {
-                            try {
-                              await markNotificationRead(id, user?.uid);
-                              console.debug("onMarkRead: markNotificationRead called for", id, "user", user?.uid);
-                            } catch (err) {
-                              console.debug("onMarkRead: markNotificationRead error", err);
-                            }
-                            setNotifications((prev) => prev.map(n => n.id === id ? { ...n, read: true } : n));
-                          }}
-                          onRemove={async (id: string) => {
-                            try {
-                              await removeNotification(id);
-                              console.debug("onRemove: removed", id);
-                            } catch (err) {
-                              console.debug("onRemove error", err);
-                            }
-                            setNotifications((prev) => prev.filter(n => n.id !== id));
-                          }}
-                          onViewAll={() => { setActiveTab("notifications"); setShowNotifications(false); }}
+                      <>
+                        {/* Backdrop to close dropdown when clicking outside */}
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={() => setShowNotifications(false)}
+                          aria-hidden="true"
                         />
-                      </div>
+                        <div className="absolute right-0 mt-3 z-50">
+                          <NotificationBar
+                            notifications={notifications}
+                            loading={notificationsLoading}
+                            onClose={() => setShowNotifications(false)}
+                            onClearAll={() => {
+                              setNotifications([]);
+                              setPendingNotifications(0);
+                            }}
+                            onMarkRead={async (id: string) => {
+                              try {
+                                await markNotificationRead(id, user?.uid);
+                                // Update local state
+                                setNotifications((prev) => prev.map(n => n.id === id ? { ...n, read: true } : n));
+                                // Update unread count
+                                setPendingNotifications((prev) => Math.max(0, prev - 1));
+                              } catch (err) {
+                                console.error("onMarkRead: markNotificationRead error", err);
+                              }
+                            }}
+                            onRemove={async (id: string) => {
+                              try {
+                                await removeNotification(id, user?.uid);
+                                // Update local state
+                                const notification = notifications.find(n => n.id === id);
+                                setNotifications((prev) => prev.filter(n => n.id !== id));
+                                // Update unread count if it was unread
+                                if (notification && !notification.read) {
+                                  setPendingNotifications((prev) => Math.max(0, prev - 1));
+                                }
+                              } catch (err) {
+                                console.error("onRemove error", err);
+                              }
+                            }}
+                            onViewAll={() => { setActiveTab("notifications"); setShowNotifications(false); }}
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
-                  <button className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors">
+                  <button type="button" className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors">
                     <User className="w-5 h-5 text-primary-foreground" />
                   </button>
                 </div>
@@ -328,6 +358,7 @@ export default function TeacherDashboard() {
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-display font-semibold text-foreground">Your Classes</h2>
                       <button
+                        type="button"
                         onClick={() => setActiveTab("classes")}
                         className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
                       >

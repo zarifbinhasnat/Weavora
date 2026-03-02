@@ -33,12 +33,13 @@ export default function NotificationBar({
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={(e) => { e.stopPropagation(); onClearAll(); }}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClearAll(); }}
             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
           >
             Clear all
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-1 rounded hover:bg-secondary/50">
+          <button type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }} className="p-1 rounded hover:bg-secondary/50">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
@@ -69,13 +70,14 @@ export default function NotificationBar({
               <div className="mt-3 flex items-center gap-3">
                 {!n.read && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); onMarkRead(n.id); }}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); onMarkRead(n.id); }}
                     className="text-xs text-primary hover:underline"
                   >
                     Mark read
                   </button>
                 )}
-                <button onClick={(e) => { e.stopPropagation(); onRemove(n.id); }} className="text-xs text-destructive hover:underline">
+                <button type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRemove(n.id); }} className="text-xs text-destructive hover:underline">
                   Dismiss
                 </button>
               </div>
@@ -85,7 +87,7 @@ export default function NotificationBar({
       </div>
 
       <div className="px-4 py-3 border-t text-right bg-white">
-        <button onClick={(e) => { e.stopPropagation(); onViewAll(); }} className="text-sm text-primary font-medium">View all notifications →</button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onViewAll(); }} className="text-sm text-primary font-medium">View all notifications →</button>
       </div>
     </div>
   );

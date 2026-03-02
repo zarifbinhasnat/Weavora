@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { getDocs, collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getDocs, collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, deleteDoc, setDoc, serverTimestamp, addDoc } from "firebase/firestore";
 import { getAllRecentAnnouncements, CourseAnnouncement } from "./announcements";
 
 export type NotificationItem = {
@@ -69,7 +69,6 @@ export async function fetchTeacherNotifications(userId?: string): Promise<Notifi
 
 export function listenTeacherNotifications(userId: string | undefined, onChange: (items: NotificationItem[]) => void) {
   if (!db) {
-    console.debug("listenTeacherNotifications: no db initialized");
     return () => {};
   }
 
@@ -78,14 +77,58 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
   // keep latest arrays and merge on updates
   let latestAnns: NotificationItem[] = [];
   let latestDls: NotificationItem[] = [];
+  let latestTeacherNotifs: NotificationItem[] = [];
   // per-user read flags
   let latestReads: Record<string, boolean> = {};
+  // per-user dismissed flags
+  let latestDismissed: Record<string, boolean> = {};
+
+  // Helper function to merge and filter notifications
+  const emitCombined = () => {
+    const combined = [
+      ...latestAnns.map(a => ({ ...a, read: latestReads[a.id] ?? a.read })),
+      ...latestDls.map(d => ({ ...d, read: latestReads[d.id] ?? d.read })),
+      ...latestTeacherNotifs.map(t => ({ ...t, read: latestReads[t.id] ?? t.read }))
+    ]
+      .filter(n => !latestDismissed[n.id]) // Filter out dismissed notifications
+      .sort((a, b) => (b.time as any) - (a.time as any));
+    onChange(combined);
+  };
+
+  // Listen to teacher-specific notifications (from student actions)
+  try {
+    if (userId) {
+      const qTeacher = query(
+        collection(db, "teacherNotifications"),
+        where("teacherId", "==", userId),
+        orderBy("createdAt", "desc"),
+        limit(20)
+      );
+      const unT = onSnapshot(qTeacher, (snap) => {
+        latestTeacherNotifs = snap.docs.map((d) => {
+          const data = d.data() as any;
+          return {
+            id: `tn_${d.id}`,
+            title: data.title ?? "Notification",
+            message: data.message ?? "",
+            time: data.createdAt ?? Date.now(),
+            read: latestReads[`tn_${d.id}`] ?? data.read ?? false,
+            type: data.type ?? "other",
+            meta: data.meta ?? {},
+          } as NotificationItem;
+        });
+        emitCombined();
+      }, (err) => console.error(err));
+      unsubscribes.push(unT);
+    }
+  } catch (err) {
+    console.error("listenTeacherNotifications: teacher notifs listener failed", err);
+  }
 
   // announcements - listen to latest classroomPosts type=announcement
   try {
     const q = query(collection(db, "classroomPosts"), where("type", "==", "announcement"), orderBy("createdAt", "desc"), limit(20));
     const unA = onSnapshot(q, (snap) => {
-      console.debug("listenTeacherNotifications: classroomPosts snapshot, docs:", snap.docs.length);
       latestAnns = snap.docs.map((d) => {
         const data = d.data() as any;
         return {
@@ -98,13 +141,11 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
           meta: { id: d.id, ...data },
         } as NotificationItem;
       });
-      const combined = [...latestAnns, ...latestDls];
-      combined.sort((a,b) => (b.time as any) - (a.time as any));
-      onChange(combined);
+      emitCombined();
     }, (err) => console.error(err));
     unsubscribes.push(unA);
   } catch (err) {
-    console.debug("listenTeacherNotifications: announcements listener failed", err);
+    console.error("listenTeacherNotifications: announcements listener failed", err);
   }
 
   // deadlines for user
@@ -112,7 +153,6 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
     if (userId) {
       const qd = query(collection(db, "deadlines"), where("userId", "==", userId), orderBy("dueDate", "asc"));
       const unD = onSnapshot(qd, (snap) => {
-        console.debug("listenTeacherNotifications: deadlines snapshot, docs:", snap.docs.length);
         latestDls = snap.docs.map((d) => {
           const data = d.data() as any;
           const dueDate = data.dueDate?.toDate?.() ?? null;
@@ -126,14 +166,12 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
             meta: { id: d.id, ...data },
           };
         });
-        const combined = [...latestAnns, ...latestDls];
-        combined.sort((a,b) => (b.time as any) - (a.time as any));
-        onChange(combined);
+        emitCombined();
       }, (err) => console.error(err));
       unsubscribes.push(unD);
     }
   } catch (err) {
-    console.debug("listenTeacherNotifications: deadlines listener failed", err);
+    console.error("listenTeacherNotifications: deadlines listener failed", err);
   }
 
   // listen to per-user read flags to merge into items
@@ -146,16 +184,30 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
           const data = d.data() as any;
           if (data && data.notificationId) latestReads[data.notificationId] = !!data.read;
         });
-        // rebuild combined view using latest read flags
-        const combined = [...latestAnns.map(a => ({ ...a, read: latestReads[a.id] ?? a.read })), ...latestDls.map(d => ({ ...d, read: latestReads[d.id] ?? d.read }))];
-        combined.sort((a,b) => (b.time as any) - (a.time as any));
-        console.debug("notificationReads snapshot received, merged reads:", latestReads);
-        onChange(combined);
+        emitCombined();
       }, (err) => console.error(err));
       unsubscribes.push(unR);
     }
   } catch (err) {
-    console.debug("listenTeacherNotifications: notificationReads listener failed", err);
+    console.error("listenTeacherNotifications: notificationReads listener failed", err);
+  }
+
+  // listen to per-user dismissed flags to filter out items
+  try {
+    if (userId) {
+      const qDismiss = query(collection(db, "notificationDismissed"), where("userId", "==", userId));
+      const unDismiss = onSnapshot(qDismiss, (snap) => {
+        latestDismissed = {};
+        snap.docs.forEach((d) => {
+          const data = d.data() as any;
+          if (data && data.notificationId) latestDismissed[data.notificationId] = !!data.dismissed;
+        });
+        emitCombined();
+      }, (err) => console.error(err));
+      unsubscribes.push(unDismiss);
+    }
+  } catch (err) {
+    console.error("listenTeacherNotifications: notificationDismissed listener failed", err);
   }
 
   return () => {
@@ -166,7 +218,6 @@ export function listenTeacherNotifications(userId: string | undefined, onChange:
 export async function markNotificationRead(notificationId: string, userId?: string) {
   try {
     if (!db) {
-      console.debug("markNotificationRead: no db");
       return;
     }
 
@@ -175,9 +226,8 @@ export async function markNotificationRead(notificationId: string, userId?: stri
       const id = notificationId.replace(/^dl_/, "");
       try {
         await updateDoc(doc(db, "deadlines", id), { read: true });
-        console.debug(`markNotificationRead: updated deadlines/${id} read=true`);
       } catch (err) {
-        console.debug("markNotificationRead: failed to update deadlines doc", err);
+        // Silent fail for backwards compatibility
       }
     }
 
@@ -191,26 +241,178 @@ export async function markNotificationRead(notificationId: string, userId?: stri
           read: true,
           updatedAt: serverTimestamp(),
         });
-        console.debug(`markNotificationRead: persisted read for ${notificationId} as ${key}`);
       } catch (err) {
         console.error("markNotificationRead: failed to persist notificationReads", err);
       }
-    } else {
-      console.debug("markNotificationRead: no userId provided, skipping per-user persistence");
     }
   } catch (err) {
-    console.debug("markNotificationRead failed", err);
+    console.error("markNotificationRead failed", err);
   }
 }
 
-export async function removeNotification(notificationId: string) {
+export async function removeNotification(notificationId: string, userId?: string) {
   try {
-    if (!db) return;
+    if (!db) {
+      return;
+    }
+
+    // For deadline notifications, actually delete the document
     if (notificationId.startsWith("dl_")) {
       const id = notificationId.replace(/^dl_/, "");
-      await deleteDoc(doc(db, "deadlines", id)).catch(() => {});
+      try {
+        await deleteDoc(doc(db, "deadlines", id));
+      } catch (err) {
+        console.error("Failed to delete deadline:", err);
+      }
+    }
+
+    // For all notification types, persist the dismissed state per user
+    // This ensures the notification won't appear again for this user
+    if (userId) {
+      const key = `${userId}_${notificationId}`;
+      try {
+        await setDoc(doc(db, "notificationDismissed", key), {
+          userId,
+          notificationId,
+          dismissed: true,
+          dismissedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.error("Failed to persist dismissal:", err);
+      }
     }
   } catch (err) {
-    console.debug("removeNotification failed", err);
+    console.error("removeNotification failed:", err);
+  }
+}
+
+/**
+ * Create a teacher notification (for student actions)
+ */
+export async function createTeacherNotification(
+  teacherId: string,
+  title: string,
+  message: string,
+  type: "announcement" | "deadline" | "message" | "member" | "other",
+  meta?: any
+) {
+  try {
+    if (!db) {
+      return;
+    }
+
+    await addDoc(collection(db, "teacherNotifications"), {
+      teacherId,
+      title,
+      message,
+      type,
+      read: false,
+      createdAt: serverTimestamp(),
+      meta: meta || {},
+    });
+  } catch (err) {
+    console.error("Failed to create teacher notification:", err);
+  }
+}
+
+/**
+ * Notify teacher when student sends a message
+ */
+export async function notifyTeacherOfMessage(
+  courseId: string,
+  studentName: string,
+  messagePreview: string
+) {
+  try {
+    if (!db) return;
+
+    // Get the course to find the teacher
+    const courseDoc = await getDocs(query(collection(db, "courses"), where("code", "==", courseId)));
+    
+    if (courseDoc.empty) return;
+
+    const courseData = courseDoc.docs[0].data();
+    const teacherId = courseData.teacherId || courseData.instructorId;
+
+    if (!teacherId) return;
+
+    await createTeacherNotification(
+      teacherId,
+      `New message in ${courseId}`,
+      `${studentName}: ${messagePreview}`,
+      "message",
+      { courseId, studentName }
+    );
+  } catch (err) {
+    console.error("Failed to notify teacher of message:", err);
+  }
+}
+
+/**
+ * Notify teacher when student creates a post
+ */
+export async function notifyTeacherOfPost(
+  courseId: string,
+  studentName: string,
+  postTitle: string,
+  postType: "discussion" | "announcement"
+) {
+  try {
+    if (!db) return;
+
+    // Get the course to find the teacher
+    const courseDoc = await getDocs(query(collection(db, "courses"), where("code", "==", courseId)));
+    
+    if (courseDoc.empty) return;
+
+    const courseData = courseDoc.docs[0].data();
+    const teacherId = courseData.teacherId || courseData.instructorId;
+
+    if (!teacherId) return;
+
+    await createTeacherNotification(
+      teacherId,
+      `New ${postType} in ${courseId}`,
+      `${studentName} posted: ${postTitle}`,
+      postType === "announcement" ? "announcement" : "message",
+      { courseId, studentName, postTitle, postType }
+    );
+  } catch (err) {
+    console.error("Failed to notify teacher of post:", err);
+  }
+}
+
+/**
+ * Notify teacher when student comments on a post
+ */
+export async function notifyTeacherOfComment(
+  courseId: string,
+  studentName: string,
+  commentText: string
+) {
+  try {
+    if (!db) return;
+
+    // Get the course to find the teacher
+    const courseDoc = await getDocs(query(collection(db, "courses"), where("code", "==", courseId)));
+    
+    if (courseDoc.empty) return;
+
+    const courseData = courseDoc.docs[0].data();
+    const teacherId = courseData.teacherId || courseData.instructorId;
+
+    if (!teacherId) return;
+
+    const commentPreview = commentText.length > 50 ? commentText.substring(0, 50) + "..." : commentText;
+
+    await createTeacherNotification(
+      teacherId,
+      `New comment in ${courseId}`,
+      `${studentName} commented: ${commentPreview}`,
+      "message",
+      { courseId, studentName, commentText: commentPreview }
+    );
+  } catch (err) {
+    console.error("Failed to notify teacher of comment:", err);
   }
 }

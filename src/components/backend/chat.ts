@@ -10,6 +10,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
+import { notifyTeacherOfMessage } from "./notifications";
 
 /* ================= TYPES ================= */
 
@@ -68,6 +69,10 @@ export async function sendChatMessage(
       timestamp: serverTimestamp(),
     }
   );
+
+  // Notify teacher when student sends a message
+  const messagePreview = message.length > 50 ? message.substring(0, 50) + "..." : message;
+  await notifyTeacherOfMessage(courseCode, userName, messagePreview);
 }
 
 /**
@@ -133,6 +138,10 @@ export async function createDiscussionPost(
       timestamp: serverTimestamp(),
     }
   );
+
+  // Notify teacher when student creates a discussion post
+  const { notifyTeacherOfPost } = await import("./notifications");
+  await notifyTeacherOfPost(courseCode, userName, title, "discussion");
 }
 
 /**
@@ -208,6 +217,10 @@ export async function addCommentToPost(
       timestamp: serverTimestamp(),
     }
   );
+
+  // Notify teacher when student comments
+  const { notifyTeacherOfComment } = await import("./notifications");
+  await notifyTeacherOfComment(courseCode, userName, text);
 }
 
 /**

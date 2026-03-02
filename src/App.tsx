@@ -19,8 +19,12 @@ import ChatDiscussion from "./components/teacher/ChatDiscussion";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
+// Protected Route Component - BYPASSED FOR DEVELOPMENT
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  // DEVELOPMENT MODE: Skip authentication checks
+  return <>{children}</>;
+  
+  /* Original protected route logic (commented out for development)
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -32,16 +36,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return isAuthenticated ? <>{children}</> : <Navigate to="/auth" replace />;
+  */
 }
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  // DEVELOPMENT MODE: Skip auth redirect logic
+  // const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
+      {/* Auth route disabled for development */}
       <Route
         path="/auth"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <Auth />}
+        element={<Navigate to="/" replace />}
       />
 
       <Route

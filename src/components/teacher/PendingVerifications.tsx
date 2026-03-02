@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
 import { Bell, CheckCircle, Clock, FileText } from "lucide-react";
+import { useState } from "react";
 
 interface PendingVerificationsProps {
   onClearNotification: () => void;
 }
 
-const pendingItems = [
+const initialPendingItems = [
   {
     id: 1,
     title: "AI Summary - Machine Learning Lecture 5",
@@ -30,6 +31,56 @@ const pendingItems = [
 ];
 
 export function PendingVerifications({ onClearNotification }: PendingVerificationsProps) {
+  const [pendingItems, setPendingItems] = useState(initialPendingItems);
+
+  const handleVerify = (itemId: number) => {
+    console.log("Verifying item:", itemId);
+    // Remove the item from the list
+    setPendingItems(prev => prev.filter(item => item.id !== itemId));
+    // Call the parent callback
+    onClearNotification();
+  };
+
+  const handleDismiss = (itemId: number) => {
+    console.log("Dismissing item:", itemId);
+    // Remove the item from the list
+    setPendingItems(prev => prev.filter(item => item.id !== itemId));
+    // Call the parent callback
+    onClearNotification();
+  };
+
+  const handleViewAll = () => {
+    console.log("View all notifications clicked");
+    // You can implement navigation to a full notifications page here
+    // For now, we'll just log it
+    alert("View All Notifications - This would navigate to the full notifications page");
+  };
+
+  // Show empty state if no items
+  if (pendingItems.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="bg-card rounded-xl border border-border p-5 shadow-card"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-primary" />
+            <h3 className="font-display font-semibold text-foreground">Pending Verifications</h3>
+          </div>
+          <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs rounded-full font-medium">
+            0
+          </span>
+        </div>
+        <div className="text-center py-8">
+          <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+          <p className="text-sm text-muted-foreground">All caught up! 🎉</p>
+          <p className="text-xs text-muted-foreground mt-1">No pending verifications at the moment</p>
+        </div>
+      </motion.div>
+    );
+  }
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -78,15 +129,23 @@ export function PendingVerifications({ onClearNotification }: PendingVerificatio
             </div>
             <div className="flex items-center gap-2 mt-3">
               <button 
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onClearNotification();
+                  handleVerify(item.id);
                 }}
                 className="flex-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:bg-primary/90 transition-colors"
               >
                 Verify
               </button>
-              <button className="px-3 py-1.5 border border-border rounded-md text-xs font-medium hover:bg-secondary transition-colors">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDismiss(item.id);
+                }}
+                className="px-3 py-1.5 border border-border rounded-md text-xs font-medium hover:bg-secondary transition-colors"
+              >
                 Dismiss
               </button>
             </div>
@@ -94,7 +153,11 @@ export function PendingVerifications({ onClearNotification }: PendingVerificatio
         ))}
       </div>
 
-      <button className="w-full mt-4 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+      <button 
+        type="button"
+        onClick={handleViewAll}
+        className="w-full mt-4 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+      >
         View All Notifications →
       </button>
     </motion.div>
