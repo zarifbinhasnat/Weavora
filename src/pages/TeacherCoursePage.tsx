@@ -13,6 +13,7 @@ import { db } from "@/components/backend/firebase";
 // Import existing manager components
 import ClassroomPosts from "@/components/teacher/ClassroomPosts";
 import DocumentsManager from "@/components/teacher/DocumentsManager";
+import { TeacherClassSummary } from "@/components/teacher/TeacherClassSummary";
 
 export default function TeacherCoursePage() {
     const { courseCode } = useParams<{ courseCode: string }>();
@@ -114,6 +115,9 @@ export default function TeacherCoursePage() {
                                 <TabsTrigger value="posts" className="gap-2">
                                     <MessageSquare className="w-4 h-4" /> Posts & Announcements
                                 </TabsTrigger>
+                                <TabsTrigger value="summaries" className="gap-2">
+                                    <BookOpen className="w-4 h-4" /> Class Summaries
+                                </TabsTrigger>
                                 <TabsTrigger value="materials" className="gap-2">
                                     <FileText className="w-4 h-4" /> Materials & Uploads
                                 </TabsTrigger>
@@ -130,6 +134,24 @@ export default function TeacherCoursePage() {
                                         {/* Reusing the existing ClassroomPosts component */}
                                         {/* Ensure it can accept a courseId prop if you update it later, currently global mock/test */}
                                         <ClassroomPosts courseId={courseCode || ""} userRole="teacher" />
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            {/* SUMMARIES TAB */}
+                            <TabsContent value="summaries">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Student Class Summaries</CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Review and verify student class summary submissions
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <TeacherClassSummary
+                                            classId={courseCode || ""}
+                                            className={courseData?.title || courseData?.name || "Class"}
+                                        />
                                     </CardContent>
                                 </Card>
                             </TabsContent>

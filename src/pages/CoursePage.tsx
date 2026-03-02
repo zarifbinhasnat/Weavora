@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { ArrowLeft, Users, Calendar, MessageSquare, FileText } from "lucide-react";
+import { ArrowLeft, Users, Calendar, MessageSquare, FileText, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,7 @@ import { db } from "@/components/backend/firebase";
 
 import ClassroomPosts from "@/components/teacher/ClassroomPosts";
 import DocumentsManager from "@/components/teacher/DocumentsManager";
+import { StudentClassSummary } from "@/components/student/StudentClassSummary";
 
 export default function CoursePage() {
   const { courseCode } = useParams<{ courseCode: string }>();
@@ -117,6 +118,9 @@ export default function CoursePage() {
                 <TabsTrigger value="posts" className="gap-2">
                   <MessageSquare className="w-4 h-4" /> Posts & Discussion
                 </TabsTrigger>
+                <TabsTrigger value="summaries" className="gap-2">
+                  <BookOpen className="w-4 h-4" /> Class Summary
+                </TabsTrigger>
                 <TabsTrigger value="materials" className="gap-2">
                   <FileText className="w-4 h-4" /> Materials
                 </TabsTrigger>
@@ -132,6 +136,24 @@ export default function CoursePage() {
                     <ClassroomPosts
                       courseId={courseCode || ""}
                       userRole="student"
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* SUMMARIES TAB */}
+              <TabsContent value="summaries">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Class Summary Submissions</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Submit summaries of class lessons and track their verification status
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <StudentClassSummary
+                      classId={courseCode || ""}
+                      className={courseData.name || "Class"}
                     />
                   </CardContent>
                 </Card>
