@@ -1,153 +1,182 @@
 import { db } from "./firebase";
 import {
-    collection,
-    query,
-    where,
-    orderBy,
-    onSnapshot,
-    getDocs,
-    limit,
-    Timestamp,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  limit,
+  Timestamp,
 } from "firebase/firestore";
 
-/* ================= TYPES ================= */
+/* =====================================================
+   TYPES
+===================================================== */
 
 export interface StudentNotification {
-    id: string;
-    type: "chat" | "discussion";
-    studentName: string;
-    courseName: string;
-    courseId: string;
-    preview: string;
-    timestamp: Timestamp | null;
+  id: string;
+  type: "chat" | "discussion";
+  studentName: string;
+  courseName: string;
+  courseId: string;
+  preview: string;
+  timestamp: Timestamp | null;
 }
 
-/* ================= LISTENER ================= */
+/* =====================================================
+   FORMAT HELPER
+===================================================== */
 
-/**
- * Listen in real-time for new student messages and discussion posts
- * across ALL courses owned by the given teacher.
- *
- * Returns an unsubscribe function that tears down every listener.
- */
+export function formatNotificationTime(ts: Timestamp | null): string {
+  if (!ts) return "";
+
+  const date = ts.toDate();
+  return date.toLocaleString();
+}
+
+/* =====================================================
+   REALTIME LISTENER
+===================================================== */
+
 export function listenToStudentNotifications(
-    teacherUid: string,
-    callback: (notifications: StudentNotification[]) => void
+  teacherUid: string,
+  callback: (notifications: StudentNotification[]) => void
 ) {
-    // We'll accumulate notifications from multiple listeners
-    const chatNotifs: Map<string, StudentNotification[]> = new Map();
-    const postNotifs: Map<string, StudentNotification[]> = new Map();
-    const courseNames: Map<string, string> = new Map();
-    const unsubscribers: (() => void)[] = [];
+  const chatNotifications: Map<string, StudentNotification[]> = new Map();
+  const discussionNotifications: Map<string, StudentNotification[]> = new Map();
+  const courseNames: Map<string, string> = new Map();
 
-    // Helper: merge all maps and push to callback
-    const flush = () => {
-        const all: StudentNotification[] = [];
-        chatNotifs.forEach((arr) => all.push(...arr));
-        postNotifs.forEach((arr) => all.push(...arr));
+  const unsubscribers: (() => void)[] = [];
 
-        // Sort newest first
-        all.sort((a, b) => {
-            const ta = a.timestamp?.toMillis?.() ?? 0;
-            const tb = b.timestamp?.toMillis?.() ?? 0;
-            return tb - ta;
-        });
+  /* ---------- Merge and push notifications ---------- */
 
-        callback(all);
-    };
+  const flushNotifications = () => {
+    const all: StudentNotification[] = [];
 
-    // Step 1: listen to the teacher's courses
-    const coursesQuery = query(
-        collection(db, "courses"),
-        where("teacherId", "==", teacherUid)
-    );
+    chatNotifications.forEach((items) => all.push(...items));
+    discussionNotifications.forEach((items) => all.push(...items));
 
-    const unsubCourses = onSnapshot(coursesQuery, (coursesSnap) => {
-        // Tear down previous per-course listeners when course list changes
-        unsubscribers.forEach((fn) => fn());
-        unsubscribers.length = 0;
-        chatNotifs.clear();
-        postNotifs.clear();
-
-        if (coursesSnap.empty) {
-            callback([]);
-            return;
-        }
-
-        coursesSnap.docs.forEach((courseDoc) => {
-            const courseId = courseDoc.id;
-            const courseData = courseDoc.data();
-            const courseName = (courseData.name ?? courseData.title ?? "Unnamed Class") as string;
-            courseNames.set(courseId, courseName);
-
-            // --- Chat messages listener (latest 15 per course) ---
-            const chatQ = query(
-                collection(db, "courses", courseId, "chatMessages"),
-                orderBy("timestamp", "desc"),
-                limit(15)
-            );
-
-            const unsubChat = onSnapshot(chatQ, (chatSnap) => {
-                const items: StudentNotification[] = [];
-                chatSnap.forEach((d) => {
-                    const data = d.data();
-                    // Skip messages from the teacher
-                    if (data.userId === teacherUid) return;
-                    if (typeof data.message !== "string") return;
-
-                    items.push({
-                        id: `chat-${courseId}-${d.id}`,
-                        type: "chat",
-                        studentName: data.userName || "A student",
-                        courseName: courseNames.get(courseId) || courseName,
-                        courseId,
-                        preview: data.message.slice(0, 120),
-                        timestamp: data.timestamp ?? null,
-                    });
-                });
-
-                chatNotifs.set(courseId, items);
-                flush();
-            });
-
-            unsubscribers.push(unsubChat);
-
-            // --- Discussion posts listener (latest 10 per course) ---
-            const postQ = query(
-                collection(db, "courses", courseId, "discussionPosts"),
-                orderBy("timestamp", "desc"),
-                limit(10)
-            );
-
-            const unsubPost = onSnapshot(postQ, (postSnap) => {
-                const items: StudentNotification[] = [];
-                postSnap.forEach((d) => {
-                    const data = d.data();
-                    if (data.userId === teacherUid) return;
-                    if (typeof data.title !== "string") return;
-
-                    items.push({
-                        id: `post-${courseId}-${d.id}`,
-                        type: "discussion",
-                        studentName: data.userName || "A student",
-                        courseName: courseNames.get(courseId) || courseName,
-                        courseId,
-                        preview: data.title,
-                        timestamp: data.timestamp ?? null,
-                    });
-                });
-
-                postNotifs.set(courseId, items);
-                flush();
-            });
-
-            unsubscribers.push(unsubPost);
-        });
+    all.sort((a, b) => {
+      const ta = a.timestamp?.toMillis?.() ?? 0;
+      const tb = b.timestamp?.toMillis?.() ?? 0;
+      return tb - ta;
     });
 
-    // Return master unsubscribe
-    return () => {
-        unsubCourses();
-        unsubscribers.forEach((fn) => fn());
-    };
+    callback(all);
+  };
+
+  /* ---------- Listen to teacher courses ---------- */
+
+  const coursesQuery = query(
+    collection(db, "courses"),
+    where("teacherId", "==", teacherUid)
+  );
+
+  const unsubscribeCourses = onSnapshot(coursesQuery, (coursesSnap) => {
+
+    // Clear previous listeners
+    unsubscribers.forEach((fn) => fn());
+    unsubscribers.length = 0;
+
+    chatNotifications.clear();
+    discussionNotifications.clear();
+
+    if (coursesSnap.empty) {
+      callback([]);
+      return;
+    }
+
+    coursesSnap.forEach((courseDoc) => {
+
+      const courseId = courseDoc.id;
+      const data = courseDoc.data();
+
+      const courseName =
+        (data.name ?? data.title ?? "Unnamed Course") as string;
+
+      courseNames.set(courseId, courseName);
+
+      /* ======================================
+         CHAT MESSAGES LISTENER
+      ====================================== */
+
+      const chatQuery = query(
+        collection(db, "courses", courseId, "chatMessages"),
+        orderBy("timestamp", "desc"),
+        limit(15)
+      );
+
+      const unsubscribeChat = onSnapshot(chatQuery, (chatSnap) => {
+
+        const items: StudentNotification[] = [];
+
+        chatSnap.forEach((docItem) => {
+          const msg = docItem.data();
+
+          if (msg.userId === teacherUid) return;
+          if (typeof msg.message !== "string") return;
+
+          items.push({
+            id: `chat-${courseId}-${docItem.id}`,
+            type: "chat",
+            studentName: msg.userName || "A student",
+            courseName: courseNames.get(courseId) || courseName,
+            courseId,
+            preview: msg.message.slice(0, 120),
+            timestamp: msg.timestamp ?? null,
+          });
+        });
+
+        chatNotifications.set(courseId, items);
+        flushNotifications();
+      });
+
+      unsubscribers.push(unsubscribeChat);
+
+      /* ======================================
+         DISCUSSION POSTS LISTENER
+      ====================================== */
+
+      const postQuery = query(
+        collection(db, "courses", courseId, "discussionPosts"),
+        orderBy("timestamp", "desc"),
+        limit(10)
+      );
+
+      const unsubscribePost = onSnapshot(postQuery, (postSnap) => {
+
+        const items: StudentNotification[] = [];
+
+        postSnap.forEach((docItem) => {
+          const post = docItem.data();
+
+          if (post.userId === teacherUid) return;
+          if (typeof post.title !== "string") return;
+
+          items.push({
+            id: `post-${courseId}-${docItem.id}`,
+            type: "discussion",
+            studentName: post.userName || "A student",
+            courseName: courseNames.get(courseId) || courseName,
+            courseId,
+            preview: post.title,
+            timestamp: post.timestamp ?? null,
+          });
+        });
+
+        discussionNotifications.set(courseId, items);
+        flushNotifications();
+      });
+
+      unsubscribers.push(unsubscribePost);
+
+    });
+  });
+
+  /* ---------- Return master unsubscribe ---------- */
+
+  return () => {
+    unsubscribeCourses();
+    unsubscribers.forEach((fn) => fn());
+  };
 }

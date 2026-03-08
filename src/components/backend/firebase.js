@@ -1,11 +1,10 @@
-// firebase.js
-// Import the functions you need from the SDKs you need
+// ================= IMPORTS =================
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, Timestamp } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
+// ================= FIREBASE CONFIG =================
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -15,23 +14,32 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// ================= DEBUG LOG =================
 console.log("Firebase Config Loaded:", {
   apiKey: firebaseConfig.apiKey ? "Present" : "Missing",
   projectId: firebaseConfig.projectId,
   authDomain: firebaseConfig.authDomain
 });
 
-// Initialize Firebase
+// ================= INITIALIZE FIREBASE =================
 const app = initializeApp(firebaseConfig);
 
-// Export authentication instance
-export const auth = getAuth(app);
+// ================= EXPORT INSTANCES =================
+export const auth = getAuth(app);        // Firebase Authentication
+export const db = getFirestore(app);    // Firestore Database
+export const storage = getStorage(app); // Storage for files
+export const timestamp = Timestamp;     // Firestore server timestamp
 
-// Export Firestore database instance
-export const db = getFirestore(app);
+// ================= FIRESTORE TEST =================
+// Test connectivity to Firestore
+export const testFirestoreConnection = async () => {
+  try {
+    const col = db.collection ? db.collection("bugs") : null; // old check
+    console.log("Firestore initialized. Ready to add documents!");
+  } catch (err) {
+    console.error("Firestore connection error:", err);
+  }
+};
 
-// Export Storage instance for file uploads
-export const storage = getStorage(app);
-
-// Export the app as default
+// ================= EXPORT DEFAULT =================
 export default app;
