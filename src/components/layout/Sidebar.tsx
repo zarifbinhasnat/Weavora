@@ -26,17 +26,17 @@ interface NavItem {
 const studentNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
   { icon: BookOpen, label: "Courses", id: "courses" },
-  { icon: MessageSquare, label: "AI Assistant", id: "assistant", badge: 3 },
+  { icon: MessageSquare, label: "AI Assistant", id: "assistant" },
   { icon: FileText, label: "Materials", id: "materials" },
   { icon: Calendar, label: "Schedule", id: "schedule" },
-  { icon: Bell, label: "Announcements", id: "announcements", badge: 2 },
+  { icon: Bell, label: "Announcements", id: "announcements" },
 ];
 
 const teacherNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
   { icon: BookOpen, label: "My Classes", id: "classes" },
   { icon: Settings, label: "Copy Checker", id: "copy-checker" },
-  { icon: Bell, label: "Notifications", id: "notifications", badge: 3 },
+  { icon: Bell, label: "Notifications", id: "notifications" },
 ];
 
 interface SidebarProps {

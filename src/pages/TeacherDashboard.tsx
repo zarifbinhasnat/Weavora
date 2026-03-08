@@ -8,7 +8,7 @@ import { Search, User, Bell } from "lucide-react";
 import { TeacherClasses as TeacherClassesComponent } from "@/components/teacher/TeacherClasses";
 import { QuickActions as QuickActionsComponent } from "@/components/teacher/QuickActions";
 import { AIToolsSection as AIToolsSectionComponent } from "@/components/teacher/AIToolsSection";
-import { PendingVerifications as PendingVerificationsComponent } from "@/components/teacher/PendingVerifications";
+import { PendingVerifications as StudentNotifications } from "@/components/teacher/PendingVerifications";
 import { TeacherStats as TeacherStatsComponent } from "@/components/teacher/TeacherStats";
 import { DocumentUpload } from "@/components/teacher/DocumentUpload";
 import { CreateClassModal } from "@/components/teacher/CreateClassModal";
@@ -45,14 +45,7 @@ const AIToolsSection = ({ onCheckCopy, onOpenGrading }: { onCheckCopy: () => voi
   }
 };
 
-const PendingVerifications = ({ onClearNotification }: { onClearNotification: () => void }) => {
-  try {
-    return <PendingVerificationsComponent onClearNotification={onClearNotification} />;
-  } catch (e) {
-    console.error("Error loading PendingVerifications:", e);
-    return <div>Error loading notifications</div>;
-  }
-};
+
 
 const TeacherStats = () => {
   try {
@@ -68,7 +61,7 @@ export default function TeacherDashboard() {
   const [showCreateClass, setShowCreateClass] = useState(false);
   const [showUploadDoc, setShowUploadDoc] = useState(false);
   const [showCopyChecker, setShowCopyChecker] = useState(false);
-  const [pendingNotifications, setPendingNotifications] = useState(3);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -129,9 +122,9 @@ export default function TeacherDashboard() {
                     className="relative w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
                   >
                     <Bell className="w-5 h-5 text-foreground" />
-                    {pendingNotifications > 0 && (
+                    {notificationCount > 0 && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                        {pendingNotifications}
+                        {notificationCount > 9 ? "9+" : notificationCount}
                       </span>
                     )}
                   </button>
@@ -184,7 +177,7 @@ export default function TeacherDashboard() {
 
                 {/* Sidebar Content */}
                 <div className="space-y-6">
-                  <PendingVerifications onClearNotification={() => setPendingNotifications(prev => Math.max(0, prev - 1))} />
+                  <StudentNotifications onNotificationCountChange={setNotificationCount} />
                 </div>
               </div>
             </div>

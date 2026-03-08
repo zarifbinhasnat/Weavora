@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, FileCheck, MessageSquare, TrendingUp, GraduationCap, ClipboardList } from "lucide-react";
+import { Sparkles, FileCheck, MessageSquare, TrendingUp, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -17,14 +17,6 @@ export function AIToolsSection({ onCheckCopy, onOpenGrading }: AIToolsSectionPro
       color: "text-white",
       bgColor: "bg-[#3F3F46]",
       badge: "Smart Grading",
-    },
-    {
-      title: "Verify Class Summary",
-      description: "AI-powered class analytics, attendance patterns, and performance insights for better teaching",
-      icon: ClipboardList,
-      color: "text-white",
-      bgColor: "bg-[#3F3F46]",
-      badge: "Analytics",
     },
   ];
 
