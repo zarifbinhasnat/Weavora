@@ -34,6 +34,31 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/auth" replace />;
 }
 
+// Role-Based Protected Route
+function RoleProtectedRoute({ children, role }: { children: React.ReactNode; role: "student" | "teacher" }) {
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+
+  // Redirect to correct dashboard if wrong role
+  if (role === "teacher" && user?.role !== "teacher") {
+    return <Navigate to="/" replace />;
+  }
+  if (role === "student" && user?.role === "teacher") {
+    return <Navigate to="/teacher-dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
@@ -47,9 +72,9 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute role="student">
             <Index />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
 
@@ -101,9 +126,9 @@ function AppRoutes() {
       <Route
         path="/teacher-dashboard"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute role="teacher">
             <TeacherDashboard />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
 
@@ -111,9 +136,9 @@ function AppRoutes() {
       <Route
         path="/teacher/course/:courseCode"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute role="teacher">
             <TeacherCoursePage />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
 

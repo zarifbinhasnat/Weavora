@@ -1,16 +1,54 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Users, FileCheck, TrendingUp } from "lucide-react";
-
-const stats = [
-  { title: "Total Classes", value: "8", icon: BookOpen, color: "bg-[#3F3F46]" },
-  { title: "Total Students", value: "156", icon: Users, color: "bg-[#3F3F46]" },
-  { title: "Pending Verifications", value: "3", icon: FileCheck, color: "bg-[#3F3F46]" },
-  { title: "Engagement Rate", value: "87%", icon: TrendingUp, color: "bg-[#3F3F46]" },
-];
+import { BookOpen, Users } from "lucide-react";
+import { auth, db } from "../backend/firebase.js";
+import { collection, query, where, onSnapshot, getDocs } from "firebase/firestore";
 
 export function TeacherStats() {
+  const [totalClasses, setTotalClasses] = useState(0);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const q = query(collection(db, "courses"), where("teacherId", "==", user.uid));
+
+    const unsub = onSnapshot(q, async (snap) => {
+      setTotalClasses(snap.size);
+
+      // Count students across all courses
+      let studentCount = 0;
+      const promises = snap.docs.map(async (courseDoc) => {
+        const membersSnap = await getDocs(
+          query(
+            collection(db, "courses", courseDoc.id, "members"),
+            where("role", "==", "student")
+          )
+        );
+        return membersSnap.size;
+      });
+
+      const counts = await Promise.all(promises);
+      studentCount = counts.reduce((sum, c) => sum + c, 0);
+      setTotalStudents(studentCount);
+      setLoading(false);
+    });
+
+    return () => unsub();
+  }, []);
+
+  const stats = [
+    { title: "Total Classes", value: loading ? "…" : String(totalClasses), icon: BookOpen, color: "bg-[#3F3F46]" },
+    { title: "Total Students", value: loading ? "…" : String(totalStudents), icon: Users, color: "bg-[#3F3F46]" },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (

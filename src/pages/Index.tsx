@@ -145,7 +145,7 @@ export default function Index() {
         <div className="p-6">
           {/* Stats */}
           <section className="mb-8">
-            <QuickStats />
+            <QuickStats courseCount={courses.length} />
           </section>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
